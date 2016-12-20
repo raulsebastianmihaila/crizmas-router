@@ -1,0 +1,34 @@
+{
+  "name": "crizmas-router",
+  "version": "0.9.0",
+  "description": "Router used in conjunction with the crizmas-mvc framework.",
+  "private": true,
+  "author": {
+    "name": "Raul-Sebastian Mihăilă",
+    "email": "raul.mihaila@gmail.com"
+  },
+  "main": "./src/router.js",
+  "peerDependencies": {
+    "crizmas-mvc": "1.x",
+    "crizmas-async-utils": "1.x",
+    "crizmas-utils": "1.x",
+    "react": "15.x"
+  },
+  "homepage": "https://raulsebastianmihaila.github.io/crizmas-mvc-docs",
+  "repository": {
+    "type": "git",
+    "url": "https://raulsebastianmihaila.github.io/crizmas-router"
+  },
+  "bugs": "https://raulsebastianmihaila.github.io/crizmas-router/issues",
+  "keywords": [
+    "mvc",
+    "router",
+    "react",
+    "crizmas",
+    "reactjs",
+    "christmas",
+    "javascript",
+    "framework",
+    "front-end"
+  ]
+}
