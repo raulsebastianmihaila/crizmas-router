@@ -17,9 +17,9 @@
   "homepage": "https://raulsebastianmihaila.github.io/crizmas-mvc-docs",
   "repository": {
     "type": "git",
-    "url": "https://raulsebastianmihaila.github.io/crizmas-router"
+    "url": "https://github.com/raulsebastianmihaila/crizmas-router"
   },
-  "bugs": "https://raulsebastianmihaila.github.io/crizmas-router/issues",
+  "bugs": "https://github.com/raulsebastianmihaila/crizmas-router/issues",
   "keywords": [
     "mvc",
     "router",
