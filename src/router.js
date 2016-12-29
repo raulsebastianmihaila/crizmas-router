@@ -17,10 +17,7 @@
     asyncUtils = require('crizmas-async-utils');
   } else {
     React = window.React;
-    Mvc = window.CrizmasMvc;
-    history = window.crizmasHistory;
-    utils = window.crizmasUtils;
-    asyncUtils = window.crizmasAsyncUtils;
+    ({Mvc, history, utils, asyncUtils} = window.crizmas);
   }
 
   const {Component, PropTypes} = React;
@@ -922,6 +919,6 @@
   if (isModule) {
     module.exports = moduleExports;
   } else {
-    window.CrizmasRouter = moduleExports;
+    window.crizmas.Router = moduleExports;
   }
 })();

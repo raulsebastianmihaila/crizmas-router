@@ -82,6 +82,7 @@
   if (isModule) {
     module.exports = moduleExports;
   } else {
-    window.crizmasHistory = moduleExports;
+    window.crizmas = window.crizmas || {};
+    window.crizmas.history = moduleExports;
   }
 })();
