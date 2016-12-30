@@ -9,9 +9,9 @@
   },
   "main": "./src/router.js",
   "peerDependencies": {
-    "crizmas-mvc": "0.x",
-    "crizmas-async-utils": "0.x",
-    "crizmas-utils": "0.x",
+    "crizmas-mvc": "^0.2.1",
+    "crizmas-async-utils": "^0.2.1",
+    "crizmas-utils": "^0.2",
     "react": "15.x"
   },
   "homepage": "https://raulsebastianmihaila.github.io/crizmas-mvc-docs",
