@@ -547,6 +547,10 @@
   }
 
   function Router({basePath, routes}) {
+    if (!new.target) {
+      throw new Error('The function must be called as a constructor.');
+    }
+
     const routesMap = new Map();
     const beforeChangeCbs = new Set();
     const changeCbs = new Set();
