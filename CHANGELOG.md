@@ -1,3 +1,10 @@
+<a name="0.2.3"></a>
+# [0.2.3](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.2...v0.2.3) (2017-02-14)
+
+### Updates
+- Allow Router to be applied. Removed the new.target check that was crashing the build when using the uglify plugin from webpack.
+- Updated the peer dependencies versions.
+
 <a name="0.2.2"></a>
 # [0.2.2](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.1...v0.2.2) (2017-02-13)
 
