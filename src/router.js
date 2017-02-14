@@ -80,58 +80,66 @@
   }
 
   function AbstractRouteFragment(path, parent, component, controller, resolve) {
-    this.parent = parent;
-    this.path = path;
-    this.component = component;
-    this.controller = controller;
-    this.resolve = resolve;
-    this.isResolved = !resolve;
-    this.children = new Map();
-  }
+    const arf = {
+      parent,
+      path,
+      component,
+      controller,
+      resolve,
+      isResolved: !resolve,
+      children: new Map()
+    };
 
-  AbstractRouteFragment.prototype.getResolvedChildFromPath = function (path, url) {
-    let urlFragments = getUrlFragments(path);
+    arf.getResolvedChildFromPath = (path, url) => {
+      let urlFragments = getUrlFragments(path);
 
-    if (!urlFragments.length) {
-      urlFragments = [''];
-    }
-
-    let abstractRouteFragment = this;
-    let childAbstractRouteFragment;
-
-    urlFragments.forEach(urlFragment => {
-      childAbstractRouteFragment = abstractRouteFragment.children.get(urlFragment);
-
-      if (!childAbstractRouteFragment) {
-        throw new Error(`Resolved route doesn't have a child with path ${urlFragment
-          || emptyPathSignal}: ${buildReadablePathBackFrom(abstractRouteFragment)}.`
-          + ` Url: ${url}`);
+      if (!urlFragments.length) {
+        urlFragments = [''];
       }
 
-      abstractRouteFragment = childAbstractRouteFragment;
-    });
+      let abstractRouteFragment = arf;
+      let childAbstractRouteFragment;
 
-    return childAbstractRouteFragment;
-  };
+      urlFragments.forEach(urlFragment => {
+        childAbstractRouteFragment = abstractRouteFragment.children.get(urlFragment);
+
+        if (!childAbstractRouteFragment) {
+          throw new Error(`Resolved route doesn't have a child with path ${urlFragment
+            || emptyPathSignal}: ${buildReadablePathBackFrom(abstractRouteFragment)}.`
+            + ` Url: ${url}`);
+        }
+
+        abstractRouteFragment = childAbstractRouteFragment;
+      });
+
+      return childAbstractRouteFragment;
+    };
+
+    return arf;
+  }
 
   function RouteFragment(abstractRouteFragment, path, parentMatchingRouteFragment) {
-    abstractRouteFragmentsMap.set(this, abstractRouteFragment);
-
     path = path || null;
 
-    this.path = path;
-    this.abstractPath = abstractRouteFragment.path;
-    this.urlPath = path
-      ? parentMatchingRouteFragment
-        ? `${normalizePath(parentMatchingRouteFragment.urlPath)}/${path}`
-        : normalizeAbsolutePath(path)
-      : parentMatchingRouteFragment
-        ? parentMatchingRouteFragment.urlPath
-        : '/';
-    this.component = abstractRouteFragment.component;
-    this.controller = abstractRouteFragment.controller;
-    this.controllerObject = null;
-    this.parent = parentMatchingRouteFragment;
+    const routeFragment = {
+      path,
+      abstractPath: abstractRouteFragment.path,
+      urlPath: path
+        ? parentMatchingRouteFragment
+          ? `${normalizePath(parentMatchingRouteFragment.urlPath)}/${path}`
+          : normalizeAbsolutePath(path)
+        : parentMatchingRouteFragment
+          ? parentMatchingRouteFragment.urlPath
+          : '/',
+      component: abstractRouteFragment.component,
+      controller: abstractRouteFragment.controller,
+      controllerObject: null,
+      parent: parentMatchingRouteFragment
+    };
+
+    abstractRouteFragmentsMap.set(routeFragment, abstractRouteFragment);
+
+    return routeFragment;
   }
 
   function resolveAbstractRouteFragment(urlFragment, parent, parentMap, component,
@@ -547,10 +555,6 @@
   }
 
   function Router({basePath, routes}) {
-    if (!new.target) {
-      throw new Error('The function must be called as a constructor.');
-    }
-
     const routesMap = new Map();
     const beforeChangeCbs = new Set();
     const changeCbs = new Set();
@@ -560,17 +564,19 @@
     routesMap.forEach(abstractRouteFragment =>
       validateUnresolvedAbstractRouteFragment(abstractRouteFragment));
 
-    this.basePath = basePath = basePath && normalizeAbsolutePath(basePath);
-    this.currentRouteFragments = [];
-    this.isTransitioning = false;
-    this.currentRouteFragment = null;
-    this.targetRouteFragment = null;
-    this.params = null;
-    this.url = null;
-    this.isMounted = false;
+    const router = {
+      basePath: basePath = basePath && normalizeAbsolutePath(basePath),
+      currentRouteFragments: [],
+      isTransitioning: false,
+      currentRouteFragment: null,
+      targetRouteFragment: null,
+      params: null,
+      url: null,
+      isMounted: false
+    };
 
     const transition = Mvc.observe((url) => {
-      if (this.isTransitioning) {
+      if (router.isTransitioning) {
         nextTransitionUrl = url;
 
         return;
@@ -578,24 +584,24 @@
 
       const path = getUrlPath(url, basePath);
 
-      this.isTransitioning = true;
+      router.isTransitioning = true;
 
       return awaitFor(match(path, routesMap), (routeFragment) => {
         const routeFragments = getRootRoutesArray(routeFragment);
 
-        this.url = url;
-        this.params = getPathParams(path, routeFragments);
-        this.targetRouteFragment = routeFragment;
+        router.url = url;
+        router.params = getPathParams(path, routeFragments);
+        router.targetRouteFragment = routeFragment;
 
-        const routesDifference = getRoutesTailDifference(this.currentRouteFragments, routeFragments);
-        const oldRouteFragment = this.currentRouteFragment;
+        const routesDifference = getRoutesTailDifference(router.currentRouteFragments, routeFragments);
+        const oldRouteFragment = router.currentRouteFragment;
         const isChangingRoute = !!routesDifference[0].length || !!routesDifference[1].length;
 
         if (isChangingRoute) {
           beforeChangeCbs.forEach(cb => cb({
-            currentRouteFragment: this.currentRouteFragment,
-            targetRouteFragment: this.targetRouteFragment,
-            router: this
+            currentRouteFragment: router.currentRouteFragment,
+            targetRouteFragment: router.targetRouteFragment,
+            router
           }));
         }
 
@@ -610,14 +616,14 @@
 
           return awaitFor(enterRouteFragments(routesDifference[1]));
         }), result => {
-          this.isTransitioning = false;
-          this.targetRouteFragment = null;
+          router.isTransitioning = false;
+          router.targetRouteFragment = null;
 
-          if (!isRouteFragmentEqual(this.currentRouteFragment, oldRouteFragment)) {
+          if (!isRouteFragmentEqual(router.currentRouteFragment, oldRouteFragment)) {
             changeCbs.forEach(cb => cb({
               oldRouteFragment,
-              currentRouteFragment: this.currentRouteFragment,
-              router: this
+              currentRouteFragment: router.currentRouteFragment,
+              router
             }));
           }
 
@@ -626,7 +632,7 @@
           }
 
           if (result === false) {
-            if (!this.currentRouteFragment) {
+            if (!router.currentRouteFragment) {
               const abstractRouteFragment = abstractRouteFragmentsMap.get(routeFragment);
 
               throw new Error('Top level route refusing to enter: '
@@ -634,7 +640,7 @@
                 + `. Url: ${routeFragment.urlPath}`);
             }
 
-            this.transitionTo(this.currentRouteFragment.urlPath);
+            router.transitionTo(router.currentRouteFragment.urlPath);
           }
         });
       });
@@ -649,15 +655,15 @@
     }
 
     const addRouteFragment = Mvc.observe((routeFragment) => {
-      this.currentRouteFragment = routeFragment;
+      router.currentRouteFragment = routeFragment;
 
-      this.currentRouteFragments.push(routeFragment);
+      router.currentRouteFragments.push(routeFragment);
     });
 
     const removeRouteFragment = Mvc.observe((routeFragment) => {
-      this.currentRouteFragment = routeFragment.parent;
+      router.currentRouteFragment = routeFragment.parent;
 
-      this.currentRouteFragments.pop();
+      router.currentRouteFragments.pop();
     });
 
     const exitRouteFragments = (routeFragments) => {
@@ -685,7 +691,7 @@
 
       if (controller && isFunc(controller.onLeave)) {
         return awaitFor(controller.onLeave({
-          router: this,
+          router,
           routeFragment
         }), result => {
           if (result !== false) {
@@ -740,7 +746,7 @@
 
           if (isFunc(controller.onEnter)) {
             return awaitFor(controller.onEnter({
-              router: this,
+              router,
               routeFragment
             }), result => {
               if (result === false) {
@@ -754,7 +760,7 @@
       }
     };
 
-    const transitionTo = (path) => {
+    router.transitionTo = (path) => {
       history.push(getFullPath(path, basePath));
     };
 
@@ -779,43 +785,43 @@
         : element;
     };
 
-    const isPathActive = path => {
-      return !!this.currentRouteFragment
-        && normalizeAbsolutePath(path) === normalizeAbsolutePath(this.currentRouteFragment.urlPath);
+    router.isPathActive = path => {
+      return !!router.currentRouteFragment && normalizeAbsolutePath(path)
+        === normalizeAbsolutePath(router.currentRouteFragment.urlPath);
     };
 
-    const isDescendantPathActive = path => {
+    router.isDescendantPathActive = path => {
       path = normalizeAbsolutePath(path);
 
-      if (!this.currentRouteFragment) {
+      if (!router.currentRouteFragment) {
         return false;
       }
 
-      const currentUrl = normalizeAbsolutePath(this.currentRouteFragment.urlPath);
+      const currentUrl = normalizeAbsolutePath(router.currentRouteFragment.urlPath);
 
       return currentUrl.startsWith(path)
         && currentUrl[path.length] === '/';
     };
 
-    this.mount = () => {
-      if (!this.isMounted) {
+    router.mount = () => {
+      if (!router.isMounted) {
         history.on(transition);
 
-        this.isMounted = true;
+        router.isMounted = true;
 
         transition(history.getUrl());
       }
     };
 
-    this.unmount = () => {
-      if (this.isMounted) {
+    router.unmount = () => {
+      if (router.isMounted) {
         history.off(transition);
 
-        this.isMounted = false;
+        router.isMounted = false;
       }
     };
 
-    this.onBeforeChange = (cb) => {
+    router.onBeforeChange = (cb) => {
       if (!isFunc(cb)) {
         throw new Error('The event listener must be a function.');
       }
@@ -823,7 +829,7 @@
       beforeChangeCbs.add(cb);
     };
 
-    this.offBeforeChange = (cb) => {
+    router.offBeforeChange = (cb) => {
       if (!isFunc(cb)) {
         throw new Error('The event listener must be a function.');
       }
@@ -831,7 +837,7 @@
       beforeChangeCbs.delete(cb);
     };
 
-    this.onChange = (cb) => {
+    router.onChange = (cb) => {
       if (!isFunc(cb)) {
         throw new Error('The event listener must be a function.');
       }
@@ -839,7 +845,7 @@
       changeCbs.add(cb);
     };
 
-    this.offChange = (cb) => {
+    router.offChange = (cb) => {
       if (!isFunc(cb)) {
         throw new Error('The event listener must be a function.');
       }
@@ -847,13 +853,13 @@
       changeCbs.delete(cb);
     };
 
-    this.getRootElement = () => {
-      return getRootElement(this.currentRouteFragment);
+    router.getRootElement = () => {
+      return getRootElement(router.currentRouteFragment);
     };
 
-    this.transitionTo = transitionTo;
-    this.isPathActive = isPathActive;
-    this.isDescendantPathActive = isDescendantPathActive;
+    router.jumpToHash = history.jumpToHash;
+
+    return router;
   }
 
   Router.fallbackRoute = ({to}) => {
@@ -868,8 +874,6 @@
       }
     };
   };
-
-  Router.prototype.jumpToHash = history.jumpToHash;
 
   class Link extends Component {
     constructor() {
