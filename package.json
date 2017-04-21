@@ -10,7 +10,7 @@
   "main": "./src/router.js",
   "peerDependencies": {
     "crizmas-mvc": "^0.2.3",
-    "crizmas-async-utils": "^0.2.1",
+    "crizmas-async-utils": "^0.2.2",
     "crizmas-utils": "^0.2",
     "react": "15.x"
   },
