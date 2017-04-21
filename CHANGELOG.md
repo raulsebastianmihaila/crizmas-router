@@ -1,3 +1,9 @@
+<a name="0.2.4"></a>
+# [0.2.4](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.3...v0.2.4) (2017-04-21)
+
+### Updates
+- Updated the versions of peer dependencies.
+
 <a name="0.2.3"></a>
 # [0.2.3](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.2...v0.2.3) (2017-02-14)
 
