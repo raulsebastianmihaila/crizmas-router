@@ -6,33 +6,33 @@
   let isListening = false;
   const cbs = new Set();
 
-  function on(cb) {
+  const on = (cb) => {
     cbs.add(cb);
 
     if (!isListening) {
       listen();
     }
-  }
+  };
 
-  function off(cb) {
+  const off = (cb) => {
     cbs.delete(cb);
 
     if (!cbs.size) {
       unlisten();
     }
-  }
+  };
 
-  function onChange() {
+  const onChange = () => {
     const url = new URL(window.location);
 
-    cbs.forEach(cb => cb(url));
+    cbs.forEach((cb) => cb(url));
 
     // chrome has a bug where going back and forward in the history
     // it doesn't jump to the hash
     jumpToHash();
-  }
+  };
 
-  function jumpToHash() {
+  const jumpToHash = () => {
     const hash = window.location.hash;
 
     if (hash) {
@@ -42,21 +42,21 @@
         element.scrollIntoView();
       }
     }
-  }
+  };
 
-  function listen() {
+  const listen = () => {
     isListening = true;
 
     window.addEventListener('popstate', onChange);
-  }
+  };
 
-  function unlisten() {
+  const unlisten = () => {
     isListening = false;
 
     window.removeEventListener('popstate', onChange);
-  }
+  };
 
-  function push(path) {
+  const push = (path) => {
     const url = new URL(path, window.location);
 
     if (url.toString() === window.location.toString()) {
@@ -65,11 +65,11 @@
 
     history.pushState(null, '', path);
     onChange();
-  }
+  };
 
-  function getUrl() {
+  const getUrl = () => {
     return new URL(window.location);
-  }
+  };
 
   const moduleExports = {
     on,
