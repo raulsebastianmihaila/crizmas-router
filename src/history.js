@@ -14,12 +14,10 @@
     }
   };
 
-  const off = (cb) => {
-    cbs.delete(cb);
+  const listen = () => {
+    isListening = true;
 
-    if (!cbs.size) {
-      unlisten();
-    }
+    window.addEventListener('popstate', onChange);
   };
 
   const onChange = () => {
@@ -44,10 +42,12 @@
     }
   };
 
-  const listen = () => {
-    isListening = true;
+  const off = (cb) => {
+    cbs.delete(cb);
 
-    window.addEventListener('popstate', onChange);
+    if (!cbs.size) {
+      unlisten();
+    }
   };
 
   const unlisten = () => {

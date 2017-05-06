@@ -1,3 +1,10 @@
+<a name="0.2.6"></a>
+# [0.2.6](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.5...v0.2.6) (2017-05-07)
+
+### Updates
+- Refactoring.
+- Update versions of dependencies.
+
 <a name="0.2.5"></a>
 # [0.2.5](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.4...v0.2.5) (2017-04-29)
 
