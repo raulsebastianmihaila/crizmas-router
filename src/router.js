@@ -4,6 +4,7 @@
   const isModule = typeof module === 'object' && typeof module.exports === 'object';
 
   let React;
+  let PropTypes;
   let Mvc;
   let history;
   let utils;
@@ -11,17 +12,19 @@
 
   if (isModule) {
     React = require('react');
+    PropTypes = require('prop-types');
     Mvc = require('crizmas-mvc');
     history = require('./history');
     utils = require('crizmas-utils');
     asyncUtils = require('crizmas-async-utils');
   } else {
     React = window.React;
+    PropTypes = window.PropTypes;
     ({Mvc, history, utils, asyncUtils} = window.crizmas);
   }
 
-  const {Component, PropTypes} = React;
-  const {isFunc, isPromise} = utils;
+  const {Component} = React;
+  const {isFunc, isPromise, resolveThenable} = utils;
   const {awaitFor, awaitAll} = asyncUtils;
 
   const fallbackPath = '*';
@@ -68,6 +71,7 @@
 
   function Router({basePath, routes}) {
     const routesMap = new Map();
+    const existingRouteFragmentsMap = new WeakMap();
     const beforeChangeCbs = new Set();
     const changeCbs = new Set();
     let nextTransitionUrl = null;
@@ -114,7 +118,13 @@
 
       router.isTransitioning = true;
 
-      return awaitFor(match(path, routesMap), (routeFragment) => {
+      return awaitFor(match(path, routesMap, existingRouteFragmentsMap), (routeFragment) => {
+        if (nextTransitionUrl) {
+          router.isTransitioning = false;
+
+          return nextTransition();
+        }
+
         const routeFragments = getRootRouteFragmentsArray(routeFragment);
 
         router.url = url;
@@ -169,6 +179,7 @@
                 + `. Url: ${routeFragment.urlPath}`);
             }
 
+            // reset the current URL
             router.transitionTo(router.currentRouteFragment.urlPath);
           }
         });
@@ -218,6 +229,7 @@
       router.currentRouteFragment = routeFragment.parent;
 
       router.currentRouteFragments.pop();
+      existingRouteFragmentsMap.delete(abstractRouteFragmentsMap.get(routeFragment));
     });
 
     const enterRouteFragments = (routeFragments) => {
@@ -279,6 +291,7 @@
       router.currentRouteFragment = routeFragment;
 
       router.currentRouteFragments.push(routeFragment);
+      existingRouteFragmentsMap.set(abstractRouteFragmentsMap.get(routeFragment), routeFragment);
     });
 
     const nextTransition = () => {
@@ -431,23 +444,23 @@
     return arf;
   }
 
-  function RouteFragment(abstractRouteFragment, path, parentMatchingRouteFragment) {
+  function RouteFragment(abstractRouteFragment, path, matchingParentRouteFragment) {
     path = path || null;
 
     const routeFragment = {
       path,
       abstractPath: abstractRouteFragment.path,
       urlPath: path
-        ? parentMatchingRouteFragment
-          ? `${normalizePath(parentMatchingRouteFragment.urlPath)}/${path}`
+        ? matchingParentRouteFragment
+          ? `${normalizePath(matchingParentRouteFragment.urlPath)}/${path}`
           : normalizeAbsolutePath(path)
-        : parentMatchingRouteFragment
-          ? parentMatchingRouteFragment.urlPath
+        : matchingParentRouteFragment
+          ? matchingParentRouteFragment.urlPath
           : '/',
       component: abstractRouteFragment.component,
       controller: abstractRouteFragment.controller,
       controllerObject: null,
-      parent: parentMatchingRouteFragment
+      parent: matchingParentRouteFragment
     };
 
     abstractRouteFragmentsMap.set(routeFragment, abstractRouteFragment);
@@ -590,12 +603,12 @@
     return url.pathname;
   };
 
-  const match = (path, routesMap) => {
+  const match = (path, routesMap, existingRouteFragmentsMap) => {
     const urlFragments = getUrlFragments(path);
     const matchingRouteFragmentsMap = new Map();
 
     routesMap.forEach((abstractRouteFragment) => matchAbstractRouteFragment(abstractRouteFragment,
-      urlFragments, matchingRouteFragmentsMap, '', null));
+      urlFragments, matchingRouteFragmentsMap, '', null, existingRouteFragmentsMap));
 
     return awaitFor(resolveMatchingRouteFragmentsMap(matchingRouteFragmentsMap, path), () => {
       let bestRoute;
@@ -619,14 +632,16 @@
   };
 
   const matchAbstractRouteFragment = (abstractRouteFragment, urlFragments,
-    matchingRouteFragmentsMap, scoreString, matchingParentFragment) => {
+    matchingRouteFragmentsMap, scoreString, matchingParentRouteFragment,
+    existingRouteFragmentsMap) => {
     const urlFragment = urlFragments[0];
     let routeFragmentScore;
     let mustAddRouteFragment;
 
     if (abstractRouteFragment.path === fallbackPath) {
-      const routeFragment = new RouteFragment(abstractRouteFragment,
-        urlFragments.length && urlFragments.join('/'), matchingParentFragment);
+      const routeFragment = getRouteFragment(abstractRouteFragment,
+        urlFragments.length && urlFragments.join('/'), matchingParentRouteFragment,
+        existingRouteFragmentsMap);
 
       matchingRouteFragmentsMap.set(routeFragment, scoreString);
 
@@ -655,8 +670,9 @@
       }
     }
 
-    const routeFragment = new RouteFragment(abstractRouteFragment,
-      abstractRouteFragment.path && urlFragment, matchingParentFragment);
+    const routeFragment = getRouteFragment(abstractRouteFragment,
+      abstractRouteFragment.path && urlFragment, matchingParentRouteFragment,
+      existingRouteFragmentsMap);
 
     const accumulatedScore = scoreString + routeFragmentScore;
 
@@ -671,8 +687,19 @@
 
       abstractRouteFragment.children.forEach((abstractRouteFragment) =>
         matchAbstractRouteFragment(abstractRouteFragment, urlFragmentsRest,
-          matchingRouteFragmentsMap, accumulatedScore, routeFragment));
+          matchingRouteFragmentsMap, accumulatedScore, routeFragment, existingRouteFragmentsMap));
     }
+  };
+
+  const getRouteFragment = (abstractRouteFragment, path, matchingParentRouteFragment,
+    existingRouteFragmentsMap) => {
+    const existingRouteFragment = existingRouteFragmentsMap.get(abstractRouteFragment);
+
+    if (existingRouteFragment && existingRouteFragment.path === path) {
+      return existingRouteFragment;
+    }
+
+    return new RouteFragment(abstractRouteFragment, path, matchingParentRouteFragment);
   };
 
   const getMatchingScore = (path, urlFragment) => {
@@ -706,7 +733,7 @@
     return awaitAll(Array.from(routeFragmentsTreeNodes, (routeFragment) => {
       const abstractRouteFragment = abstractRouteFragmentsMap.get(routeFragment);
 
-      return resolveMatchingAbstractFragment(abstractRouteFragment, url);
+      return resolveMatchingAbstractRouteFragment(abstractRouteFragment, url);
     }), () => {
       routeFragmentsTreeNodes.forEach((routeFragment) => {
         const abstractRouteFragment = abstractRouteFragmentsMap.get(routeFragment);
@@ -724,7 +751,7 @@
     });
   };
 
-  const resolveMatchingAbstractFragment = (abstractRouteFragment, url) => {
+  const resolveMatchingAbstractRouteFragment = (abstractRouteFragment, url) => {
     if (abstractRouteFragment.isResolved) {
       return;
     }
@@ -737,14 +764,15 @@
         + `. Url: ${url}`);
     }
 
-    return Promise.resolve(resolvePromise).then(({component, controller, children} = {}) => {
-      updateMatchingAbstractFragment(abstractRouteFragment, url, component, controller, children);
+    return resolveThenable(resolvePromise).then(({component, controller, children} = {}) => {
+      updateMatchingAbstractRouteFragment(abstractRouteFragment, url, component, controller,
+        children);
 
       abstractRouteFragment.isResolved = true;
     });
   };
 
-  const updateMatchingAbstractFragment = (abstractRouteFragment, url, component, controller,
+  const updateMatchingAbstractRouteFragment = (abstractRouteFragment, url, component, controller,
     children) => {
     if (!component && !controller && (!children || !children.length)) {
       throw new Error('Route must be resolved with at least a component,'
@@ -777,7 +805,7 @@
 
     if (children) {
       children.forEach(({path, component, controller, children}) => {
-        updateMatchingAbstractFragment(abstractRouteFragment.getChildFromPath(path, url), url,
+        updateMatchingAbstractRouteFragment(abstractRouteFragment.getChildFromPath(path, url), url,
           component, controller, children);
       });
     }
@@ -898,15 +926,14 @@
       const router = this.context.router;
 
       if (router.isPathActive(this.props.to)) {
-        className += 'is-active ';
+        className += ' is-active';
       }
 
       if (router.isDescendantPathActive(this.props.to)) {
-        className += 'is-descendant-active';
+        className += ' is-descendant-active';
       }
 
-      return React.DOM.a(
-        {
+      return React.DOM.a({
           href: getFullPath(this.props.to, router.basePath),
           onClick: this.onClick,
           className

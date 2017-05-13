@@ -1,3 +1,16 @@
+<a name="0.2.7"></a>
+# [0.2.7](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.6...v0.2.7) (2017-05-14)
+
+### Fixes
+- Fix the `is-active` and `is-descendant-active` link classes.
+- Fix reusing of route fragments when they are not left during transition.
+
+### Updates
+- Allow replacing the transition destination while the abstract route fragments are being resolved.
+- Small refactoring.
+- Add prop-types as a peer dependency.
+- Update versions of crizmas-mvc and react peer dependencies.
+
 <a name="0.2.6"></a>
 # [0.2.6](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.5...v0.2.6) (2017-05-07)
 
