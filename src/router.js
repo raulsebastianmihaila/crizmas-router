@@ -158,7 +158,7 @@
           router.isTransitioning = false;
           router.targetRouteFragment = null;
 
-          if (!areRouteFragmentsEqual(router.currentRouteFragment, oldRouteFragment)) {
+          if (router.currentRouteFragment !== oldRouteFragment) {
             changeCbs.forEach((cb) => cb({
               oldRouteFragment,
               currentRouteFragment: router.currentRouteFragment,
@@ -445,8 +445,6 @@
   }
 
   function RouteFragment(abstractRouteFragment, path, matchingParentRouteFragment) {
-    path = path || null;
-
     const routeFragment = {
       path,
       abstractPath: abstractRouteFragment.path,
@@ -640,7 +638,7 @@
 
     if (abstractRouteFragment.path === fallbackPath) {
       const routeFragment = getRouteFragment(abstractRouteFragment,
-        urlFragments.length && urlFragments.join('/'), matchingParentRouteFragment,
+        urlFragments.length ? urlFragments.join('/') : '', matchingParentRouteFragment,
         existingRouteFragmentsMap);
 
       matchingRouteFragmentsMap.set(routeFragment, scoreString);
@@ -853,7 +851,7 @@
       const routeUrlFragment = routeUrlFragments[i];
 
       if (isParamFragment(routeUrlFragment)) {
-        params.append(routeUrlFragment.slice(1), urlFragments[i]);
+        params.append(routeUrlFragment.slice(1), decodeURIComponent(urlFragments[i]));
       }
     }
 
@@ -876,7 +874,7 @@
       : 0;
 
     for (let i = 0; i < maxLength; i += 1) {
-      if (!areRouteFragmentsEqual(routeFragments1[i], routeFragments2[i])) {
+      if (routeFragments1[i] !== routeFragments2[i]) {
         diffIndex = i;
         break;
       }
@@ -891,22 +889,6 @@
       routeFragments1.slice(diffIndex),
       routeFragments2.slice(diffIndex)
     ];
-  };
-
-  const areRouteFragmentsEqual = (routeFragment1, routeFragment2) => {
-    // if their truthiness is different
-    if (!routeFragment1 !== !routeFragment2) {
-      return false;
-    }
-
-    // if none of them is truthy
-    if (!routeFragment1) {
-      return true;
-    }
-
-    return routeFragment1.path === routeFragment2.path
-      && abstractRouteFragmentsMap.get(routeFragment1)
-        === abstractRouteFragmentsMap.get(routeFragment2);
   };
 
   class Link extends Component {
