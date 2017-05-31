@@ -1,3 +1,12 @@
+<a name="0.2.9"></a>
+# [0.2.9](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.8...v0.2.9) (2017-05-31)
+
+### Fixes
+- Fix reusing route fragments.
+
+### Updates
+- Small refactoring.
+
 <a name="0.2.8"></a>
 # [0.2.8](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.7...v0.2.8) (2017-05-28)
 

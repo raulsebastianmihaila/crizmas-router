@@ -118,23 +118,23 @@
 
       router.isTransitioning = true;
 
-      return awaitFor(match(path, routesMap, existingRouteFragmentsMap), (routeFragment) => {
+      return awaitFor(match(path, routesMap), (routeFragment) => {
         if (nextTransitionUrl) {
           router.isTransitioning = false;
 
           return nextTransition();
         }
 
-        const routeFragments = getRootRouteFragmentsArray(routeFragment);
+        const {routeFragments, toExitRouteFragments, toEnterRouteFragments} =
+          getNewRouteFragments(routeFragment, router.currentRouteFragments,
+            existingRouteFragmentsMap);
 
         router.url = url;
         router.params = getPathParams(path, routeFragments);
         router.targetRouteFragment = routeFragment;
 
-        const routesDifference = getRoutesTailDifference(router.currentRouteFragments,
-          routeFragments);
         const oldRouteFragment = router.currentRouteFragment;
-        const isChangingRoute = !!routesDifference[0].length || !!routesDifference[1].length;
+        const isChangingRoute = !!toExitRouteFragments.length || !!toEnterRouteFragments.length;
 
         if (isChangingRoute) {
           beforeChangeCbs.forEach((cb) => cb({
@@ -148,12 +148,12 @@
         // the flags are set appropriately (like targetRouteFragment).
         // it keeps the code simpler.
 
-        return awaitFor(awaitFor(exitRouteFragments(routesDifference[0]), (result) => {
+        return awaitFor(awaitFor(exitRouteFragments(toExitRouteFragments), (result) => {
           if (nextTransitionUrl || result === false) {
             return result;
           }
 
-          return awaitFor(enterRouteFragments(routesDifference[1]));
+          return awaitFor(enterRouteFragments(toEnterRouteFragments));
         }), (result) => {
           router.isTransitioning = false;
           router.targetRouteFragment = null;
@@ -601,12 +601,12 @@
     return url.pathname;
   };
 
-  const match = (path, routesMap, existingRouteFragmentsMap) => {
+  const match = (path, routesMap) => {
     const urlFragments = getUrlFragments(path);
     const matchingRouteFragmentsMap = new Map();
 
     routesMap.forEach((abstractRouteFragment) => matchAbstractRouteFragment(abstractRouteFragment,
-      urlFragments, matchingRouteFragmentsMap, '', null, existingRouteFragmentsMap));
+      urlFragments, matchingRouteFragmentsMap, '', null));
 
     return awaitFor(resolveMatchingRouteFragmentsMap(matchingRouteFragmentsMap, path), () => {
       let bestRoute;
@@ -630,16 +630,14 @@
   };
 
   const matchAbstractRouteFragment = (abstractRouteFragment, urlFragments,
-    matchingRouteFragmentsMap, scoreString, matchingParentRouteFragment,
-    existingRouteFragmentsMap) => {
+    matchingRouteFragmentsMap, scoreString, matchingParentRouteFragment) => {
     const urlFragment = urlFragments[0];
     let routeFragmentScore;
     let mustAddRouteFragment;
 
     if (abstractRouteFragment.path === fallbackPath) {
-      const routeFragment = getRouteFragment(abstractRouteFragment,
-        urlFragments.length ? urlFragments.join('/') : '', matchingParentRouteFragment,
-        existingRouteFragmentsMap);
+      const routeFragment = new RouteFragment(abstractRouteFragment,
+        urlFragments.length ? urlFragments.join('/') : '', matchingParentRouteFragment);
 
       matchingRouteFragmentsMap.set(routeFragment, scoreString);
 
@@ -668,9 +666,8 @@
       }
     }
 
-    const routeFragment = getRouteFragment(abstractRouteFragment,
-      abstractRouteFragment.path && urlFragment, matchingParentRouteFragment,
-      existingRouteFragmentsMap);
+    const routeFragment = new RouteFragment(abstractRouteFragment,
+      abstractRouteFragment.path && urlFragment, matchingParentRouteFragment);
 
     const accumulatedScore = scoreString + routeFragmentScore;
 
@@ -685,19 +682,8 @@
 
       abstractRouteFragment.children.forEach((abstractRouteFragment) =>
         matchAbstractRouteFragment(abstractRouteFragment, urlFragmentsRest,
-          matchingRouteFragmentsMap, accumulatedScore, routeFragment, existingRouteFragmentsMap));
+          matchingRouteFragmentsMap, accumulatedScore, routeFragment));
     }
-  };
-
-  const getRouteFragment = (abstractRouteFragment, path, matchingParentRouteFragment,
-    existingRouteFragmentsMap) => {
-    const existingRouteFragment = existingRouteFragmentsMap.get(abstractRouteFragment);
-
-    if (existingRouteFragment && existingRouteFragment.path === path) {
-      return existingRouteFragment;
-    }
-
-    return new RouteFragment(abstractRouteFragment, path, matchingParentRouteFragment);
   };
 
   const getMatchingScore = (path, urlFragment) => {
@@ -828,6 +814,45 @@
     }
   };
 
+  const getNewRouteFragments = (routeFragment, currentRouteFragments,
+    existingRouteFragmentsMap) => {
+    let foundDiff = false;
+    let diffIndex = null;
+
+    const routeFragments = getRootRouteFragmentsArray(routeFragment).map((routeFragment, i) => {
+      if (foundDiff) {
+        return routeFragment;
+      }
+
+      const abstractRouteFragment = abstractRouteFragmentsMap.get(routeFragment);
+      const existingRouteFragment = existingRouteFragmentsMap.get(abstractRouteFragment);
+
+      if (existingRouteFragment && existingRouteFragment.path === routeFragment.path) {
+        return existingRouteFragment;
+      }
+
+      foundDiff = true;
+      diffIndex = i;
+
+      return routeFragment;
+    });
+
+    if (foundDiff) {
+      const diffRouteFragment = routeFragments[diffIndex];
+
+      if (diffRouteFragment.parent) {
+        // set last common existing route fragment as parent
+        diffRouteFragment.parent = routeFragments[diffIndex - 1];
+      }
+    }
+
+    return {
+      routeFragments,
+      toExitRouteFragments: diffIndex === null ? [] : currentRouteFragments.slice(diffIndex),
+      toEnterRouteFragments: diffIndex === null ? [] : routeFragments.slice(diffIndex)
+    };
+  };
+
   const getRootRouteFragmentsArray = (routeFragment) => {
     const routeFragments = [];
 
@@ -861,34 +886,6 @@
   const getRouteFragmentsPaths = (routeFragments) => {
     return routeFragments.map((routeFragment) => routeFragment.abstractPath)
       .filter((path) => path);
-  };
-
-  const getRoutesTailDifference = (routeFragments1, routeFragments2) => {
-    const maxLength = Math.min(routeFragments1.length, routeFragments2.length);
-    let diffIndex = maxLength > 0
-      ? routeFragments1.length === routeFragments2.length
-        ? null
-        // the sets are different at least starting with maxLength index
-        : maxLength
-      // initially there are no route fragments so diffIndex must be 0
-      : 0;
-
-    for (let i = 0; i < maxLength; i += 1) {
-      if (routeFragments1[i] !== routeFragments2[i]) {
-        diffIndex = i;
-        break;
-      }
-    }
-
-    if (diffIndex === null) {
-      // this means the sets of route fragments are the same
-      return [[], []];
-    }
-
-    return [
-      routeFragments1.slice(diffIndex),
-      routeFragments2.slice(diffIndex)
-    ];
   };
 
   class Link extends Component {
