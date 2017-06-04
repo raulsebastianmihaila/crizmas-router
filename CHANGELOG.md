@@ -1,3 +1,9 @@
+<a name="0.2.10"></a>
+# [0.2.10](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.9...v0.2.10) (2017-06-04)
+
+### Updates
+- Updated the version of crizmas-mvc peer dependency.
+
 <a name="0.2.9"></a>
 # [0.2.9](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.8...v0.2.9) (2017-05-31)
 
