@@ -29,9 +29,13 @@
 
   const fallbackPath = '*';
   const identifierRegExp = /^\w+$/;
+  const searchRegExp = /\?.*/;
+  const hashRegExp = /#.*/;
   const emptyPathSignal = '{*empty*}';
   // <route fragment - matching abstract route fragment> map
   const abstractRouteFragmentsMap = new WeakMap();
+  // <route fragment - search change cbs> map
+  const routeFragmentsSearchChangeCbsMap = new WeakMap();
 
   const rootController = (controller) => {
     if (Mvc.isObservedObject(controller)) {
@@ -46,6 +50,8 @@
   };
 
   const normalizePath = (path) => {
+    path = path.replace(searchRegExp, '').replace(hashRegExp, '');
+
     if (path.endsWith('/')) {
       return path.slice(0, path.length - 1);
     }
@@ -74,6 +80,7 @@
     const existingRouteFragmentsMap = new WeakMap();
     const beforeChangeCbs = new Set();
     const changeCbs = new Set();
+    const searchChangeCbs = new Set();
     let nextTransitionUrl = null;
 
     const router = {
@@ -125,16 +132,19 @@
           return nextTransition();
         }
 
-        const {routeFragments, toExitRouteFragments, toEnterRouteFragments} =
+        const {routeFragments, remainingRouteFragments, toExitRouteFragments,
+          toEnterRouteFragments} =
           getNewRouteFragments(routeFragment, router.currentRouteFragments,
             existingRouteFragmentsMap);
+
+        const existingSearchParams = router.url && router.url.searchParams;
 
         router.url = url;
         router.params = getPathParams(path, routeFragments);
         router.targetRouteFragment = routeFragment;
 
         const oldRouteFragment = router.currentRouteFragment;
-        const isChangingRoute = !!toExitRouteFragments.length || !!toEnterRouteFragments.length;
+        const isChangingRoute = toExitRouteFragments.length || toEnterRouteFragments.length;
 
         if (isChangingRoute) {
           beforeChangeCbs.forEach((cb) => cb({
@@ -142,6 +152,33 @@
             targetRouteFragment: router.targetRouteFragment,
             router
           }));
+        }
+
+        const isChangingSearchParams = !areSearchParamsEqual(existingSearchParams,
+          url.searchParams);
+
+        if (isChangingSearchParams) {
+          searchChangeCbs.forEach((cb) => cb({
+            currentRouteFragment: router.currentRouteFragment,
+            targetRouteFragment: router.targetRouteFragment,
+            router,
+            oldSearchParams: existingSearchParams,
+            newSearchParams: url.searchParams
+          }));
+
+          remainingRouteFragments.forEach((routeFragment) => {
+            const searchChangeCbs = routeFragmentsSearchChangeCbsMap.get(routeFragment);
+
+            if (searchChangeCbs) {
+              searchChangeCbs.forEach((cb) => cb({
+                currentRouteFragment: router.currentRouteFragment,
+                targetRouteFragment: router.targetRouteFragment,
+                router,
+                oldSearchParams: existingSearchParams,
+                newSearchParams: url.searchParams
+              }));
+            }
+          });
         }
 
         // even if there is no route change, allow the same flow so that
@@ -385,6 +422,22 @@
       changeCbs.delete(cb);
     };
 
+    router.onSearchChange = (cb) => {
+      if (!isFunc(cb)) {
+        throw new Error('The event listener must be a function.');
+      }
+
+      searchChangeCbs.add(cb);
+    };
+
+    router.offSearchChange = (cb) => {
+      if (!isFunc(cb)) {
+        throw new Error('The event listener must be a function.');
+      }
+
+      searchChangeCbs.delete(cb);
+    };
+
     router.jumpToHash = history.jumpToHash;
 
     init();
@@ -459,6 +512,38 @@
       controller: abstractRouteFragment.controller,
       controllerObject: null,
       parent: matchingParentRouteFragment
+    };
+
+    routeFragment.onSearchChange = (cb) => {
+      if (!isFunc(cb)) {
+        throw new Error('The event listener must be a function.');
+      }
+
+      let changeCbs = routeFragmentsSearchChangeCbsMap.get(routeFragment);
+
+      if (!changeCbs) {
+        changeCbs = new Set();
+
+        routeFragmentsSearchChangeCbsMap.set(routeFragment, changeCbs);
+      }
+
+      changeCbs.add(cb);
+    };
+
+    routeFragment.offSearchChange = (cb) => {
+      if (!isFunc(cb)) {
+        throw new Error('The event listener must be a function.');
+      }
+
+      const changeCbs = routeFragmentsSearchChangeCbsMap.get(routeFragment);
+
+      if (changeCbs) {
+        changeCbs.delete(cb);
+
+        if (!changeCbs.size) {
+          routeFragmentsSearchChangeCbsMap.delete(routeFragment);
+        }
+      }
     };
 
     abstractRouteFragmentsMap.set(routeFragment, abstractRouteFragment);
@@ -844,10 +929,15 @@
         // set last common existing route fragment as parent
         diffRouteFragment.parent = routeFragments[diffIndex - 1];
       }
+    } else if (currentRouteFragments.length > routeFragments.length) {
+      diffIndex = routeFragments.length;
     }
 
     return {
       routeFragments,
+      remainingRouteFragments: diffIndex === null
+        ? routeFragments
+        : routeFragments.slice(0, diffIndex),
       toExitRouteFragments: diffIndex === null ? [] : currentRouteFragments.slice(diffIndex),
       toEnterRouteFragments: diffIndex === null ? [] : routeFragments.slice(diffIndex)
     };
@@ -888,6 +978,39 @@
       .filter((path) => path);
   };
 
+  const areSearchParamsEqual = (params1, params2) => {
+    if (!params1 !== !params2) {
+      return false;
+    }
+
+    if (params1) {
+      for (const key of params1.keys()) {
+        if (!params2.has(key)) {
+          return false;
+        }
+
+        const values1 = params1.getAll(key);
+        const values2 = params2.getAll(key);
+
+        if (values1.length !== values2.length) {
+          return false;
+        }
+
+        if (values1.some((value, i) => value !== values2[i])) {
+          return false;
+        }
+      }
+
+      for (const key of params2.keys()) {
+        if (!params1.has(key)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
   class Link extends Component {
     constructor() {
       super();
@@ -915,7 +1038,8 @@
       return React.DOM.a({
           href: getFullPath(this.props.to, router.basePath),
           onClick: this.onClick,
-          className
+          // if className is the empty string set as undefined
+          className: className || undefined
         },
         this.props.children
       );

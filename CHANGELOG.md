@@ -1,3 +1,13 @@
+<a name="0.2.11"></a>
+# [0.2.11](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.10...v0.2.11) (2017-06-22)
+
+### Fixes
+- Fix isPathActive and isDescendantPathActive.
+- Fix routes diff.
+
+### Updates
+- Add support for search change handlers.
+
 <a name="0.2.10"></a>
 # [0.2.10](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.9...v0.2.10) (2017-06-04)
 
