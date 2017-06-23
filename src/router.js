@@ -23,14 +23,13 @@
     ({Mvc, history, utils, asyncUtils} = window.crizmas);
   }
 
-  const {Component} = React;
+  const {Component, createElement} = React;
   const {isFunc, isPromise, resolveThenable} = utils;
   const {awaitFor, awaitAll} = asyncUtils;
 
   const fallbackPath = '*';
   const identifierRegExp = /^\w+$/;
-  const searchRegExp = /\?.*/;
-  const hashRegExp = /#.*/;
+  const searchAndHashRegExp = /(\?|#).*/;
   const emptyPathSignal = '{*empty*}';
   // <route fragment - matching abstract route fragment> map
   const abstractRouteFragmentsMap = new WeakMap();
@@ -50,7 +49,7 @@
   };
 
   const normalizePath = (path) => {
-    path = path.replace(searchRegExp, '').replace(hashRegExp, '');
+    path = path.replace(searchAndHashRegExp, '');
 
     if (path.endsWith('/')) {
       return path.slice(0, path.length - 1);
@@ -357,7 +356,7 @@
       }
 
       const element = routeFragment.component
-        ? React.createElement(
+        ? createElement(
           routeFragment.component,
           {
             controller: routeFragment.controllerObject,
@@ -449,7 +448,7 @@
     return {
       path: fallbackPath,
       // a fallback route must have a component
-      component: () => React.DOM.span(null),
+      component: () => false,
       controller: {
         onEnter({router}) {
           router.transitionTo(to);
@@ -1035,7 +1034,7 @@
         className += ' is-descendant-active';
       }
 
-      return React.DOM.a({
+      return createElement('a', {
           href: getFullPath(this.props.to, router.basePath),
           onClick: this.onClick,
           // if className is the empty string set as undefined

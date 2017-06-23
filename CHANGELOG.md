@@ -1,3 +1,10 @@
+<a name="0.2.12"></a>
+# [0.2.12](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.11...v0.2.12) (2017-06-23)
+
+### Updates
+- Avoid using `React.DOM`.
+- Small refactoring.
+
 <a name="0.2.11"></a>
 # [0.2.11](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.10...v0.2.11) (2017-06-22)
 
