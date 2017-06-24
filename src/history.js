@@ -17,17 +17,18 @@
   const listen = () => {
     isListening = true;
 
-    window.addEventListener('popstate', onChange);
+    window.addEventListener('popstate', onPopState);
   };
 
-  const onChange = () => {
+  // make sure handleUrl doesn't receive inappropriate arguments
+  const onPopState = () => {
+    handleUrl();
+  };
+
+  const handleUrl = (details) => {
     const url = new URL(window.location);
 
-    cbs.forEach((cb) => cb(url));
-
-    // chrome has a bug where going back and forward in the history
-    // it doesn't jump to the hash
-    jumpToHash();
+    cbs.forEach((cb) => cb(url, details));
   };
 
   const jumpToHash = () => {
@@ -53,18 +54,27 @@
   const unlisten = () => {
     isListening = false;
 
-    window.removeEventListener('popstate', onChange);
+    window.removeEventListener('popstate', onPopState);
   };
 
-  const push = (path) => {
-    const url = new URL(path, window.location);
+  const push = (url, details) => {
+    // url must always be a string because otherwise it's treated differently by
+    // the URL api (in isCurrentUrl) and history.pushState
+    url = String(url);
 
-    if (url.toString() === window.location.toString()) {
-      return;
+    if (!isCurrentUrl(url)) {
+      history.pushState(null, '', url);
     }
 
-    history.pushState(null, '', path);
-    onChange();
+    handleUrl(details);
+  };
+
+  const isCurrentUrl = (url) => {
+    // url must always be a string because otherwise it's treated differently by
+    // the URL api and history.pushState (in push)
+    url = new URL(String(url), window.location);
+
+    return url.href === window.location.href;
   };
 
   const getUrl = () => {
@@ -75,6 +85,7 @@
     on,
     off,
     push,
+    isCurrentUrl,
     getUrl,
     jumpToHash
   };

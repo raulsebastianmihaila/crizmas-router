@@ -1,3 +1,23 @@
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.12...v0.3.0) (2017-07-06)
+
+### Breaking changes
+- Matching paths using regular expressions now requires wrapping route paths between `^` and `$`.
+- Route fragments' path and urlPath properties are now updated when they are case insensitive and they are matching a new url path with different case.
+
+### Fixes
+- Fix `isPathActive` and `isDescendantPathActive` for fallback matches.
+
+### Updates
+- Refresh API.
+- Routes manager.
+- `isCaseInsensitive` option.
+- `onUrlHandle` API.
+- `router` property on route fragments.
+- Validation against multiple param paths at a certain level.
+- Updated the version of crizmas-mvc peer dependency.
+- Refactoring
+
 <a name="0.2.12"></a>
 # [0.2.12](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.11...v0.2.12) (2017-06-23)
 
