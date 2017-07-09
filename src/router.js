@@ -266,7 +266,8 @@
 
               // in case the current abstract route fragment was replaced through the manager
               // but the route fragment refuses to leave, if we weren't checking if the url
-              // changed it would enter an infinite loop
+              // changed it would enter an infinite loop. or if the last route fragment
+              // that needs to be entered refuses to enter and it has an empty path.
               if (!history.isCurrentUrl(relativeUrl)) {
                 router.transitionTo(relativeUrl);
               }
