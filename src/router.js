@@ -117,10 +117,10 @@
       validateAbstractRouteFragmentsTree(routesMap, false);
     };
 
-    router.transitionTo = (url) => {
+    router.transitionTo = (url, options) => {
       // since the url is converted to a string in history.push, we should make
       // sure that getFullPathUrl doesn't fail if url is not a string
-      history.push(getFullPathUrl(String(url), basePath));
+      history.push(getFullPathUrl(String(url), basePath), options);
     };
 
     router.mount = () => {
@@ -133,7 +133,7 @@
       }
     };
 
-    // options may contain a refresh weakmap
+    // options may contain a refresh weakmap and a replace option
     const transition = Mvc.observe((url, options = {}) => {
       if (router.isTransitioning) {
         nextTransitionUrl = url;
@@ -142,8 +142,8 @@
         return;
       }
 
-      const transitionRefreshOptions = options.refresh;
-      const refreshRouteFragment = transitionRefreshOptions === routerRefreshOptions
+      const {refresh, replace} = options;
+      const refreshRouteFragment = refresh === routerRefreshOptions
         ? routerRefreshOptions.get(refreshRouteFragmentKey)
         : null;
 
@@ -269,7 +269,7 @@
               // changed it would enter an infinite loop. or if the last route fragment
               // that needs to be entered refuses to enter and it has an empty path.
               if (!history.isCurrentUrl(relativeUrl)) {
-                router.transitionTo(relativeUrl);
+                router.transitionTo(relativeUrl, {replace});
               }
             }
           });
@@ -431,27 +431,31 @@
         : element;
     };
 
-    router.refresh = (refreshRouteFragment = router.currentRouteFragments[0]) => {
+    router.refresh = ({routeFragment = router.currentRouteFragments[0], replace} = {}) => {
       if (!router.isMounted) {
         throw new Error('The router can not be refreshed while it\'s not mounted');
       }
 
-      if (!router.currentRouteFragments.includes(refreshRouteFragment)) {
+      if (!router.currentRouteFragments.includes(routeFragment)) {
         throw new Error('The refresh route fragment is not part of'
           + ' router.currentRouteFragments.');
       }
 
-      routerRefreshOptions.set(refreshRouteFragmentKey, refreshRouteFragment);
+      routerRefreshOptions.set(refreshRouteFragmentKey, routeFragment);
 
       // if the url is the same, the other history listeners shouldn't have to handle
       // the url again
       if (history.isCurrentUrl(router.url)) {
-        transition(router.url, {refresh: routerRefreshOptions});
+        // replace is needed here as well, for instance if a route fragment now decides to refuse
+        // to enter
+        transition(router.url, {refresh: routerRefreshOptions, replace});
       } else {
         // in case the url is different, the other history listeners must be notified
         // and the history listeners must be called in the same order, therefore
         // in this case we can not call transition() directly from here.
-        history.push(router.url, {refresh: routerRefreshOptions});
+        // also if there was a next transition set and we need to replace the url we
+        // need to go through the history.
+        history.push(router.url, {refresh: routerRefreshOptions, replace});
       }
     };
 
@@ -578,14 +582,14 @@
     return router;
   }
 
-  Router.fallbackRoute = ({to}) => {
+  Router.fallbackRoute = ({to, replace}) => {
     return {
       path: fallbackPath,
       // a fallback route must have a component
       component: () => false,
       controller: {
         onEnter({router}) {
-          router.transitionTo(to);
+          router.transitionTo(to, {replace});
         }
       }
     };
@@ -849,8 +853,8 @@
       }
     };
 
-    routeFragment.refresh = () => {
-      router.refresh(routeFragment);
+    routeFragment.refresh = ({replace} = {}) => {
+      router.refresh({routeFragment, replace});
     };
 
     init();
@@ -1455,14 +1459,14 @@
 
       this.currentRouteFragment = this.context.router.currentRouteFragment;
 
-      return nextProps.to !== this.props.to || nextProps.className !== this.props.className
-        || nextProps.children !== this.props.children
-        || oldRouteFragment !== this.currentRouteFragment;
+      return oldRouteFragment !== this.currentRouteFragment || nextProps.to !== this.props.to
+        || nextProps.className !== this.props.className || nextProps.replace !== this.props.replace
+        || nextProps.children !== this.props.children;
     }
 
     onClick(e) {
       e.preventDefault();
-      this.context.router.transitionTo(this.props.to);
+      this.context.router.transitionTo(this.props.to, {replace: this.props.replace});
     }
 
     render() {
@@ -1490,6 +1494,7 @@
 
   Link.propTypes = {
     to: PropTypes.string.isRequired,
+    replace: PropTypes.bool,
     children: PropTypes.node.isRequired,
     className: PropTypes.string
   };

@@ -63,7 +63,11 @@
     url = String(url);
 
     if (!isCurrentUrl(url)) {
-      history.pushState(null, '', url);
+      if (details && details.replace) {
+        history.replaceState(null, '', url);
+      } else {
+        history.pushState(null, '', url);
+      }
     }
 
     handleUrl(details);

@@ -1,3 +1,12 @@
+<a name="0.4.0"></a>
+# [0.4.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.3.0...v0.4.0) (2017-07-12)
+
+### Breaking changes
+- The signature for `refresh` was changed to receive an options object.
+
+### Updates
+- Replace option for `transitionTo`, `refresh`, `Link` and `fallbackRoute`.
+
 <a name="0.3.0"></a>
 # [0.3.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v0.2.12...v0.3.0) (2017-07-06)
 
