@@ -1,6 +1,6 @@
 {
   "name": "crizmas-router",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Router used in conjunction with the crizmas-mvc framework.",
   "private": true,
   "author": {
