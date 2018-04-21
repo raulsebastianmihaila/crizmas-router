@@ -2,6 +2,7 @@
   "name": "crizmas-router",
   "version": "1.0.1",
   "description": "Router used in conjunction with the crizmas-mvc framework.",
+  "license": "MIT",
   "private": true,
   "author": {
     "name": "Raul-Sebastian Mihăilă",
@@ -9,9 +10,9 @@
   },
   "main": "./src/router.js",
   "peerDependencies": {
-    "crizmas-mvc": "^1.0.1",
-    "crizmas-async-utils": "^1.0.0",
-    "crizmas-utils": "^1.0.0",
+    "crizmas-mvc": "^1.0.2",
+    "crizmas-async-utils": "^1.0.1",
+    "crizmas-utils": "^1.0.1",
     "prop-types": "^15.5.10",
     "react": "^15.5.4 || ^16.0.0"
   },

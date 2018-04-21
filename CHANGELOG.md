@@ -1,3 +1,10 @@
+<a name="1.0.2"></a>
+# [1.0.2](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.1...v1.0.2) (2018-04-21)
+
+### Updates
+- Updated the versions of crizmas-mvc, crizmas-async-utils and crizmas-utils peer dependencies.
+- Add MIT license in package.json.
+
 <a name="1.0.1"></a>
 # [1.0.1](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.0...v1.0.1) (2017-11-18)
 
