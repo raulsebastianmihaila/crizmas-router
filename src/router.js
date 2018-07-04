@@ -85,6 +85,11 @@
     const changeCbs = new Set();
     const searchChangeCbs = new Set();
     const urlHandleCbs = new Set();
+    // handlers called in case of async transition (transition process that involves a promise
+    // that is awaited) errors. these handlers are not called in case of errors that are thrown
+    // before any promise (that would turn the transition into an async transition)
+    // is involved in the process.
+    const asyncErrorCbs = new Set();
     // a weakmap used to detect refreshes that go through history.push
     // when the refresh url is different from the current url. it's meant to prevent
     // leaking internal information to other history listeners.
@@ -154,57 +159,49 @@
 
       router.isTransitioning = true;
 
-      return awaitFor(match(path, routesMap, router), Mvc.observe((routeFragment) => {
-        // even though it's possible that in the matching process there are side effects,
-        // from the routing point of view this transition was canceled if there is a
-        // nextTransitionUrl (since the targetRouteFragment wasn't even set).
-        if (nextTransitionUrl) {
-          router.isTransitioning = false;
+      return awaitFor(
+        awaitFor(
+          match(path, routesMap, router),
 
-          return nextTransition();
-        }
+          Mvc.observe((routeFragment) => {
+            // even though it's possible that in the matching process there are side effects,
+            // from the routing point of view this transition was canceled if there is a
+            // nextTransitionUrl (since the targetRouteFragment wasn't even set).
+            if (nextTransitionUrl) {
+              router.isTransitioning = false;
 
-        const {routeFragments, remainingRouteFragments, toExitRouteFragments,
-          toEnterRouteFragments} = refreshRouteFragment
-          ? getRefreshRouteFragments(refreshRouteFragment, routeFragment,
-            router.currentRouteFragments, existingRouteFragmentsMap)
-          : getNewRouteFragments(routeFragment, router.currentRouteFragments,
-            existingRouteFragmentsMap);
+              return nextTransition();
+            }
 
-        const existingSearchParams = router.url && router.url.searchParams;
-        const oldUrl = router.url;
+            const {routeFragments, remainingRouteFragments, toExitRouteFragments,
+              toEnterRouteFragments} = refreshRouteFragment
+              ? getRefreshRouteFragments(refreshRouteFragment, routeFragment,
+                router.currentRouteFragments, existingRouteFragmentsMap)
+              : getNewRouteFragments(routeFragment, router.currentRouteFragments,
+                existingRouteFragmentsMap);
 
-        router.url = url;
-        router.params = getPathParams(path, routeFragments);
-        router.targetRouteFragment = routeFragment;
+            const existingSearchParams = router.url && router.url.searchParams;
+            const oldUrl = router.url;
 
-        const oldRouteFragment = router.currentRouteFragment;
-        const isChangingRoute = toExitRouteFragments.length || toEnterRouteFragments.length;
+            router.url = url;
+            router.params = getPathParams(path, routeFragments);
+            router.targetRouteFragment = routeFragments[routeFragments.length - 1];
 
-        if (isChangingRoute) {
-          beforeChangeCbs.forEach((cb) => cb({
-            currentRouteFragment: router.currentRouteFragment,
-            targetRouteFragment: router.targetRouteFragment,
-            router
-          }));
-        }
+            const oldRouteFragment = router.currentRouteFragment;
+            const isChangingRoute = toExitRouteFragments.length || toEnterRouteFragments.length;
 
-        const isChangingSearchParams = !refreshRouteFragment
-          && !areSearchParamsEqual(existingSearchParams, url.searchParams);
+            if (isChangingRoute) {
+              beforeChangeCbs.forEach((cb) => cb({
+                currentRouteFragment: router.currentRouteFragment,
+                targetRouteFragment: router.targetRouteFragment,
+                router
+              }));
+            }
 
-        if (isChangingSearchParams) {
-          searchChangeCbs.forEach((cb) => cb({
-            currentRouteFragment: router.currentRouteFragment,
-            targetRouteFragment: router.targetRouteFragment,
-            router,
-            oldSearchParams: existingSearchParams,
-            newSearchParams: url.searchParams
-          }));
+            const isChangingSearchParams = !refreshRouteFragment
+              && !areSearchParamsEqual(existingSearchParams, url.searchParams);
 
-          remainingRouteFragments.forEach((routeFragment) => {
-            const searchChangeCbs = routeFragmentsSearchChangeCbsMap.get(routeFragment);
-
-            if (searchChangeCbs) {
+            if (isChangingSearchParams) {
               searchChangeCbs.forEach((cb) => cb({
                 currentRouteFragment: router.currentRouteFragment,
                 targetRouteFragment: router.targetRouteFragment,
@@ -212,68 +209,90 @@
                 oldSearchParams: existingSearchParams,
                 newSearchParams: url.searchParams
               }));
-            }
-          });
-        }
 
-        // even if there is no route change, allow the same flow so that
-        // the flags are set appropriately (like targetRouteFragment).
-        // it keeps the code simpler and it's also needed to trigger the urlHandle event.
+              remainingRouteFragments.forEach((routeFragment) => {
+                const searchChangeCbs = routeFragmentsSearchChangeCbsMap.get(routeFragment);
 
-        return awaitFor(
-          awaitFor(exitRouteFragments(toExitRouteFragments), (result) => {
-            if (nextTransitionUrl || result === false) {
-              return result;
-            }
-
-            return awaitFor(enterRouteFragments(toEnterRouteFragments));
-          }),
-
-          (result) => {
-            router.isTransitioning = false;
-            router.targetRouteFragment = null;
-
-            if (router.currentRouteFragment !== oldRouteFragment) {
-              changeCbs.forEach((cb) => cb({
-                oldRouteFragment,
-                currentRouteFragment: router.currentRouteFragment,
-                router
-              }));
+                if (searchChangeCbs) {
+                  searchChangeCbs.forEach((cb) => cb({
+                    currentRouteFragment: router.currentRouteFragment,
+                    targetRouteFragment: router.targetRouteFragment,
+                    router,
+                    oldSearchParams: existingSearchParams,
+                    newSearchParams: url.searchParams
+                  }));
+                }
+              });
             }
 
-            urlHandleCbs.forEach((cb) => cb({
-              oldUrl,
-              newUrl: url,
-              router
-            }));
+            // even if there is no route change, allow the same flow so that
+            // the state is updated appropriately (like targetRouteFragment).
+            // it keeps the code simpler and it's also needed to trigger the urlHandle event.
 
-            if (nextTransitionUrl) {
-              return nextTransition();
-            }
+            return awaitFor(
+              awaitFor(exitRouteFragments(toExitRouteFragments), (result) => {
+                if (nextTransitionUrl || result === false) {
+                  return result;
+                }
 
-            if (result === false) {
-              if (!router.currentRouteFragment) {
-                const abstractRouteFragment = abstractRouteFragmentsMap.get(routeFragment);
+                return enterRouteFragments(toEnterRouteFragments);
+              }),
 
-                throw new Error('Top level route refusing to enter: '
-                  + buildReadablePathBackFrom(abstractRouteFragment)
-                  + `. Url: ${routeFragment.urlPath}`);
-              }
+              (result) => {
+                router.isTransitioning = false;
+                router.targetRouteFragment = null;
 
-              // reset the current URL.
+                if (router.currentRouteFragment !== oldRouteFragment) {
+                  changeCbs.forEach((cb) => cb({
+                    oldRouteFragment,
+                    currentRouteFragment: router.currentRouteFragment,
+                    router
+                  }));
+                }
 
-              const relativeUrl = getRelativeUrl(router.currentRouteFragment.urlPath);
+                urlHandleCbs.forEach((cb) => cb({
+                  oldUrl,
+                  newUrl: url,
+                  router
+                }));
 
-              // in case the current abstract route fragment was replaced through the manager
-              // but the route fragment refuses to leave, if we weren't checking if the url
-              // changed it would enter an infinite loop. or if the last route fragment
-              // that needs to be entered refuses to enter and it has an empty path.
-              if (!history.isCurrentUrl(relativeUrl)) {
-                router.transitionTo(relativeUrl, {replace});
-              }
-            }
-          });
-      }));
+                if (nextTransitionUrl) {
+                  return nextTransition();
+                }
+
+                if (result === false) {
+                  if (!router.currentRouteFragment) {
+                    const abstractRouteFragment = abstractRouteFragmentsMap.get(routeFragment);
+
+                    throw new Error('Top level route refusing to enter: '
+                      + buildReadablePathBackFrom(abstractRouteFragment)
+                      + `. Url: ${routeFragment.urlPath}`);
+                  }
+
+                  // reset the current URL.
+
+                  const relativeUrl = getRelativeUrl(router.currentRouteFragment.urlPath);
+
+                  // in case the current abstract route fragment was replaced through the manager
+                  // but the route fragment refuses to leave, if we weren't checking if the url
+                  // changed it would enter an infinite loop. or if the last route fragment
+                  // that needs to be entered refuses to enter and it has an empty path.
+                  if (!history.isCurrentUrl(relativeUrl)) {
+                    router.transitionTo(relativeUrl, {replace});
+                  }
+                }
+              });
+          })),
+
+        null,
+
+        (error) => {
+          if (!asyncErrorCbs.size) {
+            throw error;
+          }
+
+          asyncErrorCbs.forEach((cb) => cb(error));
+        });
     });
 
     const exitRouteFragments = (routeFragments) => {
@@ -351,7 +370,6 @@
       if (controller) {
         return awaitFor(controller, (controller) => {
           if (!controller) {
-            // the promise is not settled with a controller
             throw new Error('Controller promise not settled with a controller: '
               + buildReadablePathBackFrom(abstractRouteFragment)
               + `. Url: ${routeFragment.urlPath}`);
@@ -577,6 +595,22 @@
       urlHandleCbs.delete(cb);
     };
 
+    router.onAsyncError = (cb) => {
+      if (!isFunc(cb)) {
+        throw new Error('The event listener must be a function.');
+      }
+
+      asyncErrorCbs.add(cb);
+    };
+
+    router.offAsyncError = (cb) => {
+      if (!isFunc(cb)) {
+        throw new Error('The event listener must be a function.');
+      }
+
+      asyncErrorCbs.delete(cb);
+    };
+
     init();
 
     return router;
@@ -618,7 +652,7 @@
       isFallbackFragment: path === fallbackPath,
 
       get isResolvable() {
-        return !!resolve && !arf.isResolved;
+        return !!arf.resolve && !arf.isResolved;
       }
     };
 
@@ -628,9 +662,9 @@
       if (isDefiningFragment(component, controller, resolve, isCaseInsensitive)) {
         arf.isDefined = true;
         arf.isCaseInsensitive = getIsCaseInsensitive(isCaseInsensitive);
-
-        updatePathDetails();
       }
+
+      updatePathDetails();
     };
 
     const isDefiningFragment = (component, controller, resolve, isCaseInsensitive) =>
@@ -1157,7 +1191,7 @@
       abstractRouteFragments.forEach((abstractRouteFragment) =>
         validateResolvedAbstractRouteFragment(abstractRouteFragment, url));
     }, (errors) => {
-      return Promise.reject(errors.find((error) => error));
+      throw errors.find((error) => error);
     });
   };
 
@@ -1446,10 +1480,28 @@
       && (abstractRouteFragment.isRegularFragment || abstractRouteFragment.isRegExpFragment);
 
   class Link extends Component {
-    constructor(props, context) {
+    render() {
+      return createElement(Mvc.routerContext.Consumer,
+        null,
+        (router) => createElement(LinkRenderer,
+          Object.assign({}, this.props, {router}),
+          this.props.children
+        ));
+    }
+  }
+
+  Link.propTypes = {
+    to: PropTypes.string.isRequired,
+    replace: PropTypes.bool,
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string
+  };
+
+  class LinkRenderer extends React.Component {
+    constructor(props) {
       super();
 
-      this.currentRouteFragment = context.router.currentRouteFragment;
+      this.currentRouteFragment = props.router.currentRouteFragment;
 
       this.onClick = this.onClick.bind(this);
     }
@@ -1457,21 +1509,23 @@
     shouldComponentUpdate(nextProps) {
       const oldRouteFragment = this.currentRouteFragment;
 
-      this.currentRouteFragment = this.context.router.currentRouteFragment;
+      this.currentRouteFragment = nextProps.router.currentRouteFragment;
 
-      return oldRouteFragment !== this.currentRouteFragment || nextProps.to !== this.props.to
-        || nextProps.className !== this.props.className || nextProps.replace !== this.props.replace
+      return oldRouteFragment !== this.currentRouteFragment
+        || nextProps.to !== this.props.to
+        || nextProps.className !== this.props.className
+        || nextProps.replace !== this.props.replace
         || nextProps.children !== this.props.children;
     }
 
     onClick(e) {
       e.preventDefault();
-      this.context.router.transitionTo(this.props.to, {replace: this.props.replace});
+      this.props.router.transitionTo(this.props.to, {replace: this.props.replace});
     }
 
     render() {
       let className = this.props.className || '';
-      const router = this.context.router;
+      const router = this.props.router;
 
       if (router.isPathActive(this.props.to)) {
         className += ' is-active';
@@ -1492,15 +1546,12 @@
     }
   }
 
-  Link.propTypes = {
+  LinkRenderer.propTypes = {
+    router: PropTypes.object.isRequired,
     to: PropTypes.string.isRequired,
     replace: PropTypes.bool,
     children: PropTypes.node.isRequired,
     className: PropTypes.string
-  };
-
-  Link.contextTypes = {
-    router: PropTypes.object.isRequired
   };
 
   Router.Link = Link;

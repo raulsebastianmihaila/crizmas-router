@@ -1,3 +1,20 @@
+<a name="1.0.3"></a>
+# [1.0.3](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.2...v1.0.3) (2018-12-08)
+
+### Updates
+- Use the new react context API (from v16).
+- Update crizmas-mvc, crizmas-utils, crizmas-async-utils, react and prop-types peer dependencies.
+- Replace Promise.reject with throwing to decrease the number of jobs involved.
+- Improve some comments.
+- Add tests.
+- Stop awaiting for enterRouteFragments because there's no associated handler.
+- Add onAsyncError.
+
+### Fixes
+- Fix defining routes that didn't have own configurations but only children configurations, both in terms of matching and checking ambiguities.
+- Fix resolving input route fragments that are specified in multiple locations in the configuration.
+- Fix reusing targetRouteFragment.
+
 <a name="1.0.2"></a>
 # [1.0.2](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.1...v1.0.2) (2018-04-21)
 
