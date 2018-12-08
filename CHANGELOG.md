@@ -1,5 +1,5 @@
-<a name="1.0.3"></a>
-# [1.0.3](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.2...v1.0.3) (2018-12-08)
+<a name="1.1.0"></a>
+# [1.1.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.2...v1.1.0) (2018-12-08)
 
 ### Updates
 - Use the new react context API (from v16).
