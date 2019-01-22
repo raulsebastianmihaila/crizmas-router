@@ -616,9 +616,9 @@
     return router;
   }
 
-  Router.fallbackRoute = ({to, replace}) => {
+  Router.fallbackRoute = ({path = fallbackPath, to, replace}) => {
     return {
-      path: fallbackPath,
+      path,
       // a fallback route must have a component
       component: () => false,
       controller: {

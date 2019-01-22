@@ -1,3 +1,9 @@
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.1.0...v1.2.0) (2019-01-23)
+
+### Updates
+- Update fallbackRoute to receive a matching path that triggers the fallback.
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.0.2...v1.1.0) (2018-12-08)
 
