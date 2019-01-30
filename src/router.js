@@ -1480,36 +1480,25 @@
       && (abstractRouteFragment.isRegularFragment || abstractRouteFragment.isRegExpFragment);
 
   class Link extends Component {
-    render() {
-      return createElement(Mvc.routerContext.Consumer,
-        null,
-        (router) => createElement(LinkRenderer,
-          Object.assign({}, this.props, {router}),
-          this.props.children
-        ));
+    get router() {
+      return this.context;
     }
-  }
 
-  Link.propTypes = {
-    to: PropTypes.string.isRequired,
-    replace: PropTypes.bool,
-    children: PropTypes.node.isRequired,
-    className: PropTypes.string
-  };
-
-  class LinkRenderer extends React.Component {
-    constructor(props) {
+    constructor() {
       super();
 
-      this.currentRouteFragment = props.router.currentRouteFragment;
-
       this.onClick = this.onClick.bind(this);
+    }
+
+
+    componentDidMount() {
+      this.currentRouteFragment = this.router.currentRouteFragment;
     }
 
     shouldComponentUpdate(nextProps) {
       const oldRouteFragment = this.currentRouteFragment;
 
-      this.currentRouteFragment = nextProps.router.currentRouteFragment;
+      this.currentRouteFragment = this.router.currentRouteFragment;
 
       return oldRouteFragment !== this.currentRouteFragment
         || nextProps.to !== this.props.to
@@ -1520,23 +1509,22 @@
 
     onClick(e) {
       e.preventDefault();
-      this.props.router.transitionTo(this.props.to, {replace: this.props.replace});
+      this.router.transitionTo(this.props.to, {replace: this.props.replace});
     }
 
     render() {
       let className = this.props.className || '';
-      const router = this.props.router;
 
-      if (router.isPathActive(this.props.to)) {
+      if (this.router.isPathActive(this.props.to)) {
         className += ' is-active';
       }
 
-      if (router.isDescendantPathActive(this.props.to)) {
+      if (this.router.isDescendantPathActive(this.props.to)) {
         className += ' is-descendant-active';
       }
 
       return createElement('a', {
-          href: getFullPathUrl(this.props.to, router.basePath),
+          href: getFullPathUrl(this.props.to, this.router.basePath),
           onClick: this.onClick,
           // if className is the empty string set as undefined
           className: className || undefined
@@ -1546,13 +1534,14 @@
     }
   }
 
-  LinkRenderer.propTypes = {
-    router: PropTypes.object.isRequired,
+  Link.propTypes = {
     to: PropTypes.string.isRequired,
     replace: PropTypes.bool,
     children: PropTypes.node.isRequired,
     className: PropTypes.string
   };
+
+  Link.contextType = Mvc.routerContext;
 
   Router.Link = Link;
 
