@@ -1,3 +1,5 @@
+'use strict';
+
 const Router = require('../src/router.js');
 const history = require('../src/history.js');
 const Mvc = require('crizmas-mvc');

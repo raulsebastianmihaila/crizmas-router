@@ -1,3 +1,5 @@
+'use strict';
+
 const history = require('../src/history.js');
 const url = require('url');
 
