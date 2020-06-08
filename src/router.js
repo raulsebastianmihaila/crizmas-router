@@ -370,7 +370,7 @@
       if (controller) {
         return awaitFor(controller, (controller) => {
           if (!controller) {
-            throw new Error('Controller promise not settled with a controller: '
+            throw new Error('Controller promise not fulfilled with a controller: '
               + buildReadablePathBackFrom(abstractRouteFragment)
               + `. Url: ${routeFragment.urlPath}`);
           }
@@ -680,7 +680,7 @@
         arf.paramName = path.slice(1);
       } else if (isRegExpFragment(path)) {
         arf.isRegExpFragment = true;
-        arf.regExp = new RegExp(path, arf.isCaseInsensitive === true ? 'i' : '');
+        arf.regExp = new RegExp(path, arf.isCaseInsensitive ? 'i' : '');
       } else {
         arf.isRegularFragment = true;
         arf.lowerCasePath = arf.path.toLowerCase();
