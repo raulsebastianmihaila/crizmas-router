@@ -1,3 +1,16 @@
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.2.0...v2.0.0) (2021-01-01)
+
+### Breaking changes
+- Dropped support for non-module script tags.
+- Moved from commonjs modules to standard ES modules, which means the structure of the exports changed: Link is not a property of Router anymore.
+
+### Updates
+- Updated crizmas-mvc peer dependency.
+- Updated jest and crizmas-mvc dev dependencies.
+- Improve error message used when entering a route fragment.
+- Small refactoring.
+
 <a name="1.2.0"></a>
 # [1.2.0](https://github.com/raulsebastianmihaila/crizmas-router/compare/v1.1.0...v1.2.0) (2019-01-23)
 

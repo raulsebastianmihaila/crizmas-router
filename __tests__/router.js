@@ -1,12 +1,12 @@
-'use strict';
+import {URL, URLSearchParams} from 'url';
+import {jest} from '@jest/globals';
+import Mvc, {observe, isObservedObject} from 'crizmas-mvc';
 
-const Router = require('../src/router.js');
-const history = require('../src/history.js');
-const Mvc = require('crizmas-mvc');
-const url = require('url');
+import Router from '../src/router.js';
+import * as history from '../src/history.js';
 
-global.URLSearchParams = url.URLSearchParams;
-global.URL = url.URL;
+globalThis.URLSearchParams = URLSearchParams;
+globalThis.URL = URL;
 
 describe('router', () => {
   describe('Router', () => {
@@ -396,11 +396,11 @@ describe('router', () => {
           ]
         });
 
-        history.push('https://localhost/base-path');
+        history.push('http://localhost/base-path');
         router.mount();
-        expect(() => router.transitionTo('https://localhost/test'))
+        expect(() => router.transitionTo('http://localhost/test'))
           .toThrowError(new Error('URL doesn\'t start with the base path. Url: '
-          + 'https://localhost/test. Base path: /base-path'));
+          + 'http://localhost/test. Base path: /base-path'));
         router.unmount();
         history.push('/');
       });
@@ -411,7 +411,7 @@ describe('router', () => {
         const controllerObservation = jest.fn();
         const componentObservation = jest.fn();
 
-        history.push('https://localhost/base-path');
+        history.push('http://localhost/base-path');
 
         const router = new Router({
           basePath: 'base-path',
@@ -447,7 +447,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        router.transitionTo('https://localhost/base-path/test');
+        router.transitionTo('http://localhost/base-path/test');
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(componentObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
@@ -776,7 +776,7 @@ describe('router', () => {
         router.mount();
         expect(router.url instanceof URL).toBe(true);
         expect(router.url.href)
-          .toBe('https://localhost/path1/path2?queryParam1=queryValue1#fragment');
+          .toBe('http://localhost/path1/path2?queryParam1=queryValue1#fragment');
         router.unmount();
         history.push('/');
       });
@@ -793,7 +793,7 @@ describe('router', () => {
               path: '/test/:x',
               controller: {
                 onEnter() {
-                  expect(router.url.href).toBe('https://localhost/test/1234?y=100');
+                  expect(router.url.href).toBe('http://localhost/test/1234?y=100');
                   expect(router.params.get('x')).toBe('1234');
                   expect(router.url.searchParams.get('y')).toBe('100');
                 }
@@ -822,7 +822,7 @@ describe('router', () => {
               controller: {
                 onEnter() {
                   expect(router.url.href)
-                    .toBe('https://localhost/test/with%20space?y=with%20space');
+                    .toBe('http://localhost/test/with%20space?y=with%20space');
                   expect(router.params.get('x')).toBe('with space');
                   expect(router.url.searchParams.get('y')).toBe('with space');
                 }
@@ -865,7 +865,7 @@ describe('router', () => {
                     onEnter() {
                       expect(router.currentRouteFragments.length).toBe(0);
                       expect(router.currentRouteFragment).toBe(null);
-                      expect(router.url.href).toBe('https://localhost/test');
+                      expect(router.url.href).toBe('http://localhost/test');
                       expect(router.isTransitioning).toBe(true);
                       controllerObservation();
                     }
@@ -893,7 +893,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
@@ -902,7 +902,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -917,7 +917,7 @@ describe('router', () => {
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -963,14 +963,14 @@ describe('router', () => {
         expect(resolveObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
         expect(resolveObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -983,21 +983,21 @@ describe('router', () => {
             expect(resolveObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             router.transitionTo('/');
             expect(resolveObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(3);
             router.transitionTo('test');
             expect(resolveObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(4);
             mvc.unmount();
@@ -1044,21 +1044,21 @@ describe('router', () => {
         expect(resolveObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
         expect(resolveObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
         expect(resolveObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1071,21 +1071,21 @@ describe('router', () => {
             expect(resolveObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             router.transitionTo('/');
             expect(resolveObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(3);
             router.transitionTo('test');
             expect(resolveObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(4);
             mvc.unmount();
@@ -1147,7 +1147,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('parent/child');
@@ -1156,7 +1156,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1171,7 +1171,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(2);
             expect(router.currentRouteFragment.abstractPath).toBe('child');
-            expect(router.url.href).toBe('https://localhost/parent/child');
+            expect(router.url.href).toBe('http://localhost/parent/child');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1231,7 +1231,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
@@ -1239,7 +1239,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1253,7 +1253,7 @@ describe('router', () => {
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(2);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1311,7 +1311,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('/test');
@@ -1319,7 +1319,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(2);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('test');
-        expect(router.url.href).toBe('https://localhost/test');
+        expect(router.url.href).toBe('http://localhost/test');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(2);
         mvc.unmount();
@@ -1398,7 +1398,7 @@ describe('router', () => {
         expect(parentResolveObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('parent/child');
@@ -1409,7 +1409,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1426,7 +1426,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(2);
             expect(router.currentRouteFragment.abstractPath).toBe('child');
-            expect(router.url.href).toBe('https://localhost/parent/child');
+            expect(router.url.href).toBe('http://localhost/parent/child');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1506,7 +1506,7 @@ describe('router', () => {
 
         expect(parentResolveObservation.mock.calls.length).toBe(0);
         expect(childResolveObservation.mock.calls.length).toBe(0);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -1520,7 +1520,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1538,7 +1538,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(2);
             expect(router.currentRouteFragment.abstractPath).toBe('child');
-            expect(router.url.href).toBe('https://localhost/parent/child');
+            expect(router.url.href).toBe('http://localhost/parent/child');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1619,7 +1619,7 @@ describe('router', () => {
 
         expect(parentResolveObservation.mock.calls.length).toBe(0);
         expect(childResolveObservation.mock.calls.length).toBe(0);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -1632,7 +1632,7 @@ describe('router', () => {
         expect(childControllerObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1649,7 +1649,7 @@ describe('router', () => {
             expect(childControllerObservation.mock.calls.length).toBe(0);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('parent');
-            expect(router.url.href).toBe('https://localhost/parent');
+            expect(router.url.href).toBe('http://localhost/parent');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1738,7 +1738,7 @@ describe('router', () => {
         expect(childResolveObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('parent/child');
@@ -1750,7 +1750,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.onAsyncError((error) => {
@@ -1758,7 +1758,7 @@ describe('router', () => {
             + ' a controller or children: parent/child. Url: /parent/child'));
           expect(router.currentRouteFragments.length).toBe(1);
           expect(router.currentRouteFragment.abstractPath).toBe('');
-          expect(router.url.href).toBe('https://localhost/');
+          expect(router.url.href).toBe('http://localhost/');
           expect(router.isTransitioning).toBe(true);
           expect(urlHandleObservation.mock.calls.length).toBe(1);
           asyncErrorHandlerObservation();
@@ -1780,7 +1780,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(0);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
             expect(asyncErrorHandlerObservation.mock.calls.length).toBe(1);
@@ -1815,7 +1815,7 @@ describe('router', () => {
                 expect(componentObservation.mock.calls.length).toBe(0);
                 expect(router.currentRouteFragments.length).toBe(0);
                 expect(router.currentRouteFragment).toBe(null);
-                expect(router.url.href).toBe('https://localhost/test');
+                expect(router.url.href).toBe('http://localhost/test');
                 expect(router.isTransitioning).toBe(true);
                 expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1827,7 +1827,7 @@ describe('router', () => {
                       expect(router.currentRouteFragments.length).toBe(0);
                       expect(componentObservation.mock.calls.length).toBe(0);
                       expect(router.currentRouteFragment).toBe(null);
-                      expect(router.url.href).toBe('https://localhost/test');
+                      expect(router.url.href).toBe('http://localhost/test');
                       expect(router.isTransitioning).toBe(true);
                       expect(urlHandleObservation.mock.calls.length).toBe(1);
                     }
@@ -1855,7 +1855,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
@@ -1864,7 +1864,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/test');
+        expect(router.url.href).toBe('http://localhost/test');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1878,7 +1878,7 @@ describe('router', () => {
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1910,7 +1910,7 @@ describe('router', () => {
                   expect(componentObservation.mock.calls.length).toBe(0);
                   expect(router.currentRouteFragments.length).toBe(0);
                   expect(router.currentRouteFragment).toBe(null);
-                  expect(router.url.href).toBe('https://localhost/test');
+                  expect(router.url.href).toBe('http://localhost/test');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
                 }
@@ -1935,7 +1935,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
@@ -1943,7 +1943,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/test');
+        expect(router.url.href).toBe('http://localhost/test');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -1955,7 +1955,7 @@ describe('router', () => {
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -1971,7 +1971,7 @@ describe('router', () => {
           method() {}
         };
 
-        expect(Mvc.isObservedObject(controller)).toBe(false);
+        expect(isObservedObject(controller)).toBe(false);
 
         const mvc = new Mvc({
           router: new Router({
@@ -1991,7 +1991,7 @@ describe('router', () => {
 
         expect(componentObservation.mock.calls.length).toBe(1);
         controller.method();
-        expect(Mvc.isObservedObject(controller)).toBe(false);
+        expect(isObservedObject(controller)).toBe(false);
         expect(controller.hasOwnProperty('isPending')).toBe(false);
         expect(componentObservation.mock.calls.length).toBe(1);
         mvc.unmount();
@@ -2042,7 +2042,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
 
@@ -2050,17 +2050,17 @@ describe('router', () => {
           .then()
           .then()
           .then(() => {
-            expect(Mvc.isObservedObject(controller)).toBe(false);
+            expect(isObservedObject(controller)).toBe(false);
             expect(controller.hasOwnProperty('isPending')).toBe(false);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
             controller.method();
-            expect(Mvc.isObservedObject(controller)).toBe(false);
+            expect(isObservedObject(controller)).toBe(false);
             expect(controller.hasOwnProperty('isPending')).toBe(false);
             expect(componentObservation.mock.calls.length).toBe(1);
             mvc.unmount();
@@ -2099,9 +2099,9 @@ describe('router', () => {
         });
 
         expect(componentObservation.mock.calls.length).toBe(1);
-        expect(Mvc.isObservedObject(controllerObject)).toBe(false);
+        expect(isObservedObject(controllerObject)).toBe(false);
         controllerObject.method();
-        expect(Mvc.isObservedObject(controllerObject)).toBe(false);
+        expect(isObservedObject(controllerObject)).toBe(false);
         expect(controllerObject.hasOwnProperty('isPending')).toBe(false);
         expect(componentObservation.mock.calls.length).toBe(1);
         mvc.unmount();
@@ -2122,7 +2122,7 @@ describe('router', () => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(componentObservation.mock.calls.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(true);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
           },
@@ -2148,7 +2148,7 @@ describe('router', () => {
                 expect(componentObservation.mock.calls.length).toBe(0);
                 expect(router.currentRouteFragments.length).toBe(0);
                 expect(router.currentRouteFragment).toBe(null);
-                expect(router.url.href).toBe('https://localhost/test');
+                expect(router.url.href).toBe('http://localhost/test');
                 expect(router.isTransitioning).toBe(true);
                 expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -2177,7 +2177,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         router.transitionTo('test');
@@ -2186,7 +2186,7 @@ describe('router', () => {
         expect(componentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/test');
+        expect(router.url.href).toBe('http://localhost/test');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -2195,18 +2195,18 @@ describe('router', () => {
           .then()
           .then()
           .then(() => {
-            expect(Mvc.isObservedObject(controller)).toBe(false);
+            expect(isObservedObject(controller)).toBe(false);
             expect(controller.hasOwnProperty('isPending')).toBe(false);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(controllerEnterObservation.mock.calls.length).toBe(1);
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('test');
-            expect(router.url.href).toBe('https://localhost/test');
+            expect(router.url.href).toBe('http://localhost/test');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             controller.method();
-            expect(Mvc.isObservedObject(controller)).toBe(false);
+            expect(isObservedObject(controller)).toBe(false);
             expect(controller.hasOwnProperty('isPending')).toBe(false);
             expect(componentObservation.mock.calls.length).toBe(1);
             mvc.unmount();
@@ -2221,7 +2221,7 @@ describe('router', () => {
         const controllerObservation = jest.fn();
         const componentObservation = jest.fn();
         const urlHandleObservation = jest.fn();
-        const controller = Mvc.observe({
+        const controller = observe({
           onEnter: () => {
             controllerObservation();
             expect(controller.isPending).toBe(false);
@@ -2229,7 +2229,7 @@ describe('router', () => {
             expect(controller.pending.has('method')).toBe(false);
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
 
@@ -2251,7 +2251,7 @@ describe('router', () => {
           ]
         });
 
-        expect(Mvc.isObservedObject(controller)).toBe(true);
+        expect(isObservedObject(controller)).toBe(true);
         expect(controller.isPending).toBe(false);
         expect(controller.pending.has('onEnter')).toBe(false);
         expect(controller.pending.has('method')).toBe(false);
@@ -2274,7 +2274,7 @@ describe('router', () => {
         expect(controller.pending.has('method')).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(componentObservation.mock.calls.length).toBe(0);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
@@ -2292,7 +2292,7 @@ describe('router', () => {
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -2319,7 +2319,7 @@ describe('router', () => {
         const controllerObservation = jest.fn();
         const componentObservation = jest.fn();
         const urlHandleObservation = jest.fn();
-        const controller = Mvc.observe({
+        const controller = observe({
           onEnter: () => {
             controllerObservation();
             expect(controller.isPending).toBe(false);
@@ -2327,7 +2327,7 @@ describe('router', () => {
             expect(controller.pending.has('method')).toBe(false);
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
 
@@ -2349,7 +2349,7 @@ describe('router', () => {
           ]
         });
 
-        expect(Mvc.isObservedObject(controller)).toBe(true);
+        expect(isObservedObject(controller)).toBe(true);
         expect(controller.isPending).toBe(false);
         expect(controller.pending.has('onEnter')).toBe(false);
         expect(controller.pending.has('method')).toBe(false);
@@ -2372,7 +2372,7 @@ describe('router', () => {
         expect(controller.pending.has('method')).toBe(false);
         expect(controllerObservation.mock.calls.length).toBe(0);
         expect(componentObservation.mock.calls.length).toBe(0);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
@@ -2400,7 +2400,7 @@ describe('router', () => {
             expect(componentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -2478,7 +2478,7 @@ describe('router', () => {
         expect(observation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         router.unmount();
       });
 
@@ -2603,7 +2603,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2618,7 +2618,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2666,7 +2666,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2681,7 +2681,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2727,7 +2727,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2742,7 +2742,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2781,7 +2781,7 @@ describe('router', () => {
         expect(router.isMounted).toBe(true);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
         expect(asyncErrorHandlerObservation.mock.calls.length).toBe(0);
@@ -2819,7 +2819,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
         expect(contrllerObservation.mock.calls.length).toBe(1);
@@ -2860,7 +2860,7 @@ describe('router', () => {
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
         expect(asyncErrorHandlerObservation.mock.calls.length).toBe(0);
@@ -2872,7 +2872,7 @@ describe('router', () => {
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
             expect(asyncErrorHandlerObservation.mock.calls.length).toBe(0);
@@ -2914,7 +2914,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -2929,7 +2929,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3030,7 +3030,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3045,7 +3045,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3093,7 +3093,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(controllerObservation.mock.calls.length).toBe(0);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
@@ -3101,7 +3101,7 @@ describe('router', () => {
         router.transitionTo('sibling');
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/sibling');
+        expect(router.url.href).toBe('http://localhost/sibling');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
@@ -3117,7 +3117,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/sibling');
+            expect(router.url.href).toBe('http://localhost/sibling');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(1);
@@ -3175,7 +3175,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(parentControllerObservation.mock.calls.length).toBe(1);
         expect(childControllerObservation.mock.calls.length).toBe(0);
@@ -3191,7 +3191,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(parentControllerObservation.mock.calls.length).toBe(1);
             expect(childControllerObservation.mock.calls.length).toBe(1);
@@ -3230,7 +3230,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3249,7 +3249,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3306,7 +3306,7 @@ describe('router', () => {
         router.mount();
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(controllerObservation.mock.calls.length).toBe(1);
         expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3323,7 +3323,7 @@ describe('router', () => {
           .then(() => {
             expect(router.currentRouteFragments.length).toBe(0);
             expect(router.currentRouteFragment).toBe(null);
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(true);
             expect(controllerObservation.mock.calls.length).toBe(1);
             expect(urlHandleObservation.mock.calls.length).toBe(0);
@@ -3415,7 +3415,7 @@ describe('router', () => {
                     expect(childComponentObservation.mock.calls.length).toBe(0);
                     expect(router.currentRouteFragments.length).toBe(0);
                     expect(router.currentRouteFragment).toBe(null);
-                    expect(router.url.href).toBe('https://localhost/parent/child');
+                    expect(router.url.href).toBe('http://localhost/parent/child');
                     expect(router.isTransitioning).toBe(true);
                     expect(urlHandleObservation.mock.calls.length).toBe(1);
                   });
@@ -3437,7 +3437,7 @@ describe('router', () => {
                       expect(childComponentObservation.mock.calls.length).toBe(0);
                       expect(router.currentRouteFragments.length).toBe(1);
                       expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                      expect(router.url.href).toBe('https://localhost/parent/child');
+                      expect(router.url.href).toBe('http://localhost/parent/child');
                       expect(router.isTransitioning).toBe(true);
                       expect(urlHandleObservation.mock.calls.length).toBe(1);
                     }
@@ -3465,7 +3465,7 @@ describe('router', () => {
           domElement: document.createElement('div')
         });
 
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -3477,7 +3477,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3492,7 +3492,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(2);
             expect(router.currentRouteFragment.abstractPath).toBe('child');
-            expect(router.url.href).toBe('https://localhost/parent/child');
+            expect(router.url.href).toBe('http://localhost/parent/child');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -3524,7 +3524,7 @@ describe('router', () => {
                   expect(childComponentObservation.mock.calls.length).toBe(0);
                   expect(router.currentRouteFragments.length).toBe(0);
                   expect(router.currentRouteFragment).toBe(null);
-                  expect(router.url.href).toBe('https://localhost/parent/child');
+                  expect(router.url.href).toBe('http://localhost/parent/child');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
                 }
@@ -3545,7 +3545,7 @@ describe('router', () => {
                       expect(childComponentObservation.mock.calls.length).toBe(0);
                       expect(router.currentRouteFragments.length).toBe(1);
                       expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                      expect(router.url.href).toBe('https://localhost/parent/child');
+                      expect(router.url.href).toBe('http://localhost/parent/child');
                       expect(router.isTransitioning).toBe(true);
                       expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3579,7 +3579,7 @@ describe('router', () => {
         expect(parentComponentObservation.mock.calls.length).toBe(0);
         expect(childControllerObservation.mock.calls.length).toBe(0);
         expect(childComponentObservation.mock.calls.length).toBe(0);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -3591,7 +3591,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('parent');
-        expect(router.url.href).toBe('https://localhost/parent');
+        expect(router.url.href).toBe('http://localhost/parent');
         expect(router.isTransitioning).toBe(false);
         // the url was overwritten so there was a new change that was handled
         expect(urlHandleObservation.mock.calls.length).toBe(3);
@@ -3625,7 +3625,7 @@ describe('router', () => {
                     expect(childComponentObservation.mock.calls.length).toBe(0);
                     expect(router.currentRouteFragments.length).toBe(0);
                     expect(router.currentRouteFragment).toBe(null);
-                    expect(router.url.href).toBe('https://localhost/parent/child');
+                    expect(router.url.href).toBe('http://localhost/parent/child');
                     expect(router.isTransitioning).toBe(true);
                     expect(urlHandleObservation.mock.calls.length).toBe(1);
                   });
@@ -3647,7 +3647,7 @@ describe('router', () => {
                       expect(childComponentObservation.mock.calls.length).toBe(0);
                       expect(router.currentRouteFragments.length).toBe(1);
                       expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                      expect(router.url.href).toBe('https://localhost/parent/child');
+                      expect(router.url.href).toBe('http://localhost/parent/child');
                       expect(router.isTransitioning).toBe(true);
                       expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3677,7 +3677,7 @@ describe('router', () => {
           domElement: document.createElement('div')
         });
 
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -3689,7 +3689,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(0);
         expect(router.currentRouteFragment).toBe(null);
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3704,7 +3704,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(0);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('parent');
-            expect(router.url.href).toBe('https://localhost/parent');
+            expect(router.url.href).toBe('http://localhost/parent');
             expect(router.isTransitioning).toBe(false);
             // the url was overwritten so there was a new change that was handled
             expect(urlHandleObservation.mock.calls.length).toBe(3);
@@ -3737,7 +3737,7 @@ describe('router', () => {
                   expect(childComponentObservation.mock.calls.length).toBe(0);
                   expect(router.currentRouteFragments.length).toBe(0);
                   expect(router.currentRouteFragment).toBe(null);
-                  expect(router.url.href).toBe('https://localhost/parent/child');
+                  expect(router.url.href).toBe('http://localhost/parent/child');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
                 }
@@ -3760,7 +3760,7 @@ describe('router', () => {
                         expect(childComponentObservation.mock.calls.length).toBe(0);
                         expect(router.currentRouteFragments.length).toBe(1);
                         expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                        expect(router.url.href).toBe('https://localhost/parent/child');
+                        expect(router.url.href).toBe('http://localhost/parent/child');
                         expect(router.isTransitioning).toBe(true);
                         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3791,7 +3791,7 @@ describe('router', () => {
           domElement: document.createElement('div')
         });
 
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -3803,7 +3803,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('parent');
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3818,7 +3818,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(0);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('parent');
-            expect(router.url.href).toBe('https://localhost/parent');
+            expect(router.url.href).toBe('http://localhost/parent');
             expect(router.isTransitioning).toBe(false);
             // the url was overwritten so there was a new change that was handled
             expect(urlHandleObservation.mock.calls.length).toBe(3);
@@ -3855,7 +3855,7 @@ describe('router', () => {
                     expect(secondComponentObservation.mock.calls.length).toBe(0);
                     expect(router.currentRouteFragments.length).toBe(1);
                     expect(router.currentRouteFragment.abstractPath).toBe('');
-                    expect(router.url.href).toBe('https://localhost/second');
+                    expect(router.url.href).toBe('http://localhost/second');
                     expect(router.isTransitioning).toBe(true);
                     expect(urlHandleObservation.mock.calls.length).toBe(1);
                   });
@@ -3877,7 +3877,7 @@ describe('router', () => {
                   expect(secondComponentObservation.mock.calls.length).toBe(0);
                   expect(router.currentRouteFragments.length).toBe(0);
                   expect(router.currentRouteFragment).toBe(null);
-                  expect(router.url.href).toBe('https://localhost/second');
+                  expect(router.url.href).toBe('http://localhost/second');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
                 }
@@ -3907,7 +3907,7 @@ describe('router', () => {
         expect(firstComponentObservation.mock.calls.length).toBe(1);
         expect(secondControllerObservation.mock.calls.length).toBe(0);
         expect(secondComponentObservation.mock.calls.length).toBe(0);
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
@@ -3919,7 +3919,7 @@ describe('router', () => {
         expect(secondComponentObservation.mock.calls.length).toBe(0);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('');
-        expect(router.url.href).toBe('https://localhost/second');
+        expect(router.url.href).toBe('http://localhost/second');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -3935,7 +3935,7 @@ describe('router', () => {
             expect(secondComponentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('second');
-            expect(router.url.href).toBe('https://localhost/second');
+            expect(router.url.href).toBe('http://localhost/second');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -3969,7 +3969,7 @@ describe('router', () => {
                   expect(childComponentObservation.mock.calls.length).toBe(2);
                   expect(router.currentRouteFragments.length).toBe(1);
                   expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                  expect(router.url.href).toBe('https://localhost/');
+                  expect(router.url.href).toBe('http://localhost/');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
                 }
@@ -3992,7 +3992,7 @@ describe('router', () => {
                         expect(childComponentObservation.mock.calls.length).toBe(2);
                         expect(router.currentRouteFragments.length).toBe(2);
                         expect(router.currentRouteFragment.abstractPath).toBe('child');
-                        expect(router.url.href).toBe('https://localhost/');
+                        expect(router.url.href).toBe('http://localhost/');
                         expect(router.isTransitioning).toBe(true);
                         expect(urlHandleObservation.mock.calls.length).toBe(1);
                       });
@@ -4025,7 +4025,7 @@ describe('router', () => {
         expect(parentComponentObservation.mock.calls.length).toBe(1);
         expect(childControllerObservation.mock.calls.length).toBe(0);
         expect(childComponentObservation.mock.calls.length).toBe(1);
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(2);
         expect(router.currentRouteFragment.abstractPath).toBe('child');
@@ -4037,7 +4037,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(2);
         expect(router.currentRouteFragments.length).toBe(2);
         expect(router.currentRouteFragment.abstractPath).toBe('child');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -4053,7 +4053,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(2);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('');
-            expect(router.url.href).toBe('https://localhost/');
+            expect(router.url.href).toBe('http://localhost/');
             expect(router.isTransitioning).toBe(false);
             expect(urlHandleObservation.mock.calls.length).toBe(2);
             mvc.unmount();
@@ -4087,7 +4087,7 @@ describe('router', () => {
                   expect(childComponentObservation.mock.calls.length).toBe(1);
                   expect(router.currentRouteFragments.length).toBe(1);
                   expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                  expect(router.url.href).toBe('https://localhost/');
+                  expect(router.url.href).toBe('http://localhost/');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -4110,7 +4110,7 @@ describe('router', () => {
                       expect(childComponentObservation.mock.calls.length).toBe(1);
                       expect(router.currentRouteFragments.length).toBe(2);
                       expect(router.currentRouteFragment.abstractPath).toBe('child');
-                      expect(router.url.href).toBe('https://localhost/');
+                      expect(router.url.href).toBe('http://localhost/');
                       expect(router.isTransitioning).toBe(true);
                       expect(urlHandleObservation.mock.calls.length).toBe(1);
                     }
@@ -4142,7 +4142,7 @@ describe('router', () => {
         expect(parentComponentObservation.mock.calls.length).toBe(1);
         expect(childControllerObservation.mock.calls.length).toBe(0);
         expect(childComponentObservation.mock.calls.length).toBe(1);
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(2);
         expect(router.currentRouteFragment.abstractPath).toBe('child');
@@ -4154,7 +4154,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('parent');
-        expect(router.url.href).toBe('https://localhost/parent');
+        expect(router.url.href).toBe('http://localhost/parent');
         expect(router.isTransitioning).toBe(false);
         // the url was overwritten so there was a new change that was handled
         expect(urlHandleObservation.mock.calls.length).toBe(3);
@@ -4189,7 +4189,7 @@ describe('router', () => {
                   expect(childComponentObservation.mock.calls.length).toBe(2);
                   expect(router.currentRouteFragments.length).toBe(1);
                   expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                  expect(router.url.href).toBe('https://localhost/');
+                  expect(router.url.href).toBe('http://localhost/');
                   expect(router.isTransitioning).toBe(true);
                   expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -4214,7 +4214,7 @@ describe('router', () => {
                         expect(childComponentObservation.mock.calls.length).toBe(2);
                         expect(router.currentRouteFragments.length).toBe(2);
                         expect(router.currentRouteFragment.abstractPath).toBe('child');
-                        expect(router.url.href).toBe('https://localhost/');
+                        expect(router.url.href).toBe('http://localhost/');
                         expect(router.isTransitioning).toBe(true);
                         expect(urlHandleObservation.mock.calls.length).toBe(1);
                       });
@@ -4247,7 +4247,7 @@ describe('router', () => {
         expect(parentComponentObservation.mock.calls.length).toBe(1);
         expect(childControllerObservation.mock.calls.length).toBe(0);
         expect(childComponentObservation.mock.calls.length).toBe(1);
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(2);
         expect(router.currentRouteFragment.abstractPath).toBe('child');
@@ -4259,7 +4259,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(2);
         expect(router.currentRouteFragments.length).toBe(2);
         expect(router.currentRouteFragment.abstractPath).toBe('child');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -4275,7 +4275,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(2);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('parent');
-            expect(router.url.href).toBe('https://localhost/parent');
+            expect(router.url.href).toBe('http://localhost/parent');
             expect(router.isTransitioning).toBe(false);
             // the url was overwritten so there was a new change that was handled
             expect(urlHandleObservation.mock.calls.length).toBe(3);
@@ -4313,7 +4313,7 @@ describe('router', () => {
                     expect(childComponentObservation.mock.calls.length).toBe(1);
                     expect(router.currentRouteFragments.length).toBe(1);
                     expect(router.currentRouteFragment.abstractPath).toBe('parent');
-                    expect(router.url.href).toBe('https://localhost/');
+                    expect(router.url.href).toBe('http://localhost/');
                     expect(router.isTransitioning).toBe(true);
                     expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -4337,7 +4337,7 @@ describe('router', () => {
                       expect(childComponentObservation.mock.calls.length).toBe(1);
                       expect(router.currentRouteFragments.length).toBe(2);
                       expect(router.currentRouteFragment.abstractPath).toBe('child');
-                      expect(router.url.href).toBe('https://localhost/');
+                      expect(router.url.href).toBe('http://localhost/');
                       expect(router.isTransitioning).toBe(true);
                       expect(urlHandleObservation.mock.calls.length).toBe(1);
                     }
@@ -4369,7 +4369,7 @@ describe('router', () => {
         expect(parentComponentObservation.mock.calls.length).toBe(1);
         expect(childControllerObservation.mock.calls.length).toBe(0);
         expect(childComponentObservation.mock.calls.length).toBe(1);
-        expect(router.url.href).toBe('https://localhost/parent/child');
+        expect(router.url.href).toBe('http://localhost/parent/child');
         expect(router.isTransitioning).toBe(false);
         expect(router.currentRouteFragments.length).toBe(2);
         expect(router.currentRouteFragment.abstractPath).toBe('child');
@@ -4381,7 +4381,7 @@ describe('router', () => {
         expect(childComponentObservation.mock.calls.length).toBe(1);
         expect(router.currentRouteFragments.length).toBe(1);
         expect(router.currentRouteFragment.abstractPath).toBe('parent');
-        expect(router.url.href).toBe('https://localhost/');
+        expect(router.url.href).toBe('http://localhost/');
         expect(router.isTransitioning).toBe(true);
         expect(urlHandleObservation.mock.calls.length).toBe(1);
 
@@ -4397,7 +4397,7 @@ describe('router', () => {
             expect(childComponentObservation.mock.calls.length).toBe(1);
             expect(router.currentRouteFragments.length).toBe(1);
             expect(router.currentRouteFragment.abstractPath).toBe('parent');
-            expect(router.url.href).toBe('https://localhost/parent');
+            expect(router.url.href).toBe('http://localhost/parent');
             expect(router.isTransitioning).toBe(false);
             // the url was overwritten so there was a new change that was handled
             expect(urlHandleObservation.mock.calls.length).toBe(3);

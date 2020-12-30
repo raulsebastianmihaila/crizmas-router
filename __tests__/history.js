@@ -1,10 +1,9 @@
-'use strict';
+import {URL, URLSearchParams} from 'url';
 
-const history = require('../src/history.js');
-const url = require('url');
+import * as history from '../src/history.js';
 
-global.URLSearchParams = url.URLSearchParams;
-global.URL = url.URL;
+globalThis.URLSearchParams = URLSearchParams;
+globalThis.URL = URL;
 
 describe('history', () => {
   // describe('push', () => {
@@ -24,7 +23,7 @@ describe('history', () => {
   describe('getUrl', () => {
     test('returns the current url', () => {
       expect.assertions(1);
-      expect(history.getUrl().href).toBe('https://localhost/');
+      expect(history.getUrl().href).toBe('http://localhost/');
     });
 
     // test('needs testing', () => {
