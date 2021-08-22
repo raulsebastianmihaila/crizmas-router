@@ -1,3 +1,10 @@
+<a name="2.0.3"></a>
+# [2.0.3](https://github.com/raulsebastianmihaila/crizmas-router/compare/v2.0.1...v2.0.3) (2021-08-22)
+
+### Updates
+- Updated crizmas-mvc, prop-types and react peer dependencies.
+- Updated crizmas-mvc, jest, react and react-dom dev dependencies.
+
 <a name="2.0.1"></a>
 # [2.0.1](https://github.com/raulsebastianmihaila/crizmas-router/compare/v2.0.0...v2.0.1) (2021-01-03)
 

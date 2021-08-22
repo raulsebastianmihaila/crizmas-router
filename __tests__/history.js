@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import {URL, URLSearchParams} from 'url';
 
 import * as history from '../src/history.js';

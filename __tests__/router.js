@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import {URL, URLSearchParams} from 'url';
 import {jest} from '@jest/globals';
 import Mvc, {observe, isObservedObject} from 'crizmas-mvc';
