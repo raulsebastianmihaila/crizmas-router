@@ -11,8 +11,8 @@
   "type": "module",
   "main": "./src/router.js",
   "peerDependencies": {
-    "crizmas-mvc": "^2.0.3",
-    "prop-types": "^15.7.2",
+    "crizmas-mvc": "^2.0.5",
+    "prop-types": "^15.8.1",
     "react": "^16.5.2 || ^17.0.2"
   },
   "homepage": "https://raulsebastianmihaila.github.io/crizmas-mvc-docs",
@@ -37,9 +37,9 @@
     "test-coverage": "NODE_OPTIONS=--experimental-vm-modules npx jest --coverage"
   },
   "devDependencies": {
-    "crizmas-mvc": "^2.0.3",
-    "jest": "^27.0.6",
-    "prop-types": "^15.7.2",
+    "crizmas-mvc": "^2.0.5",
+    "jest": "^27.5.1",
+    "prop-types": "^15.8.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   }
