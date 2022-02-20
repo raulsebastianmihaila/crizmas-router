@@ -599,6 +599,7 @@ export default function Router({basePath, routes, isCaseInsensitive}) {
 Router.fallbackRoute = ({path = fallbackPath, to, replace}) => {
   return {
     path,
+    isLeafReenterable: true,
     // a fallback route must have a component
     component: () => false,
     controller: {
@@ -609,7 +610,14 @@ Router.fallbackRoute = ({path = fallbackPath, to, replace}) => {
   };
 };
 
-function AbstractRouteFragment(path, parent, component, controller, resolve, isCaseInsensitive,
+function AbstractRouteFragment(
+  path,
+  parent,
+  component,
+  controller,
+  resolve,
+  isCaseInsensitive,
+  isLeafReenterable,
   router) {
   const arf = {
     parent,
@@ -619,6 +627,7 @@ function AbstractRouteFragment(path, parent, component, controller, resolve, isC
     resolve,
     // based only on configuration, the type of fragment doesn't matter
     isCaseInsensitive: false,
+    isLeafReenterable,
     isDefined: false,
     isResolved: false,
     children: new Map(),
@@ -639,7 +648,7 @@ function AbstractRouteFragment(path, parent, component, controller, resolve, isC
   arf.getChildFromPath = new AbstractRouteFragmentManager(arf).getChildFromPath;
 
   const init = () => {
-    if (isDefiningFragment(component, controller, resolve, isCaseInsensitive)) {
+    if (isDefiningFragment(component, controller, resolve, isCaseInsensitive, isLeafReenterable)) {
       arf.isDefined = true;
       arf.isCaseInsensitive = getIsCaseInsensitive(isCaseInsensitive);
     }
@@ -647,8 +656,17 @@ function AbstractRouteFragment(path, parent, component, controller, resolve, isC
     updatePathDetails();
   };
 
-  const isDefiningFragment = (component, controller, resolve, isCaseInsensitive) =>
-    component || controller || resolve || typeof isCaseInsensitive === 'boolean';
+  const isDefiningFragment = (
+    component,
+    controller,
+    resolve,
+    isCaseInsensitive,
+    isLeafReenterable) =>
+    !!component
+      || !!controller
+      || !!resolve
+      || typeof isCaseInsensitive === 'boolean'
+      || typeof isLeafReenterable === 'boolean';
 
   const getIsCaseInsensitive = (isCaseInsensitive) => typeof isCaseInsensitive === 'boolean'
     ? isCaseInsensitive
@@ -667,8 +685,8 @@ function AbstractRouteFragment(path, parent, component, controller, resolve, isC
     }
   };
 
-  arf.update = (component, controller, resolve, isCaseInsensitive) => {
-    if (!isDefiningFragment(component, controller, resolve, isCaseInsensitive)) {
+  arf.update = (component, controller, resolve, isCaseInsensitive, isLeafReenterable) => {
+    if (!isDefiningFragment(component, controller, resolve, isCaseInsensitive, isLeafReenterable)) {
       return;
     }
 
@@ -680,6 +698,7 @@ function AbstractRouteFragment(path, parent, component, controller, resolve, isC
     arf.controller = controller;
     arf.resolve = resolve;
     arf.isCaseInsensitive = getIsCaseInsensitive(isCaseInsensitive);
+    arf.isLeafReenterable = isLeafReenterable;
     arf.isDefined = true;
 
     updatePathDetails();
@@ -806,6 +825,7 @@ function RouteFragment(abstractRouteFragment, path, matchingParentRouteFragment,
     urlPath: null,
     normalizedUrlPath: null,
     canCaseVary: canRouteFragmentsCaseVary(abstractRouteFragment),
+    isLeafReenterable: abstractRouteFragment.isLeafReenterable,
     component: abstractRouteFragment.component,
     controller: abstractRouteFragment.controller,
     controllerObject: null,
@@ -886,13 +906,22 @@ const resolveInputRoute = (inputRoute, parent, parentMap, router) => {
     let component;
     let resolve;
     let isCaseInsensitive;
+    let isLeafReenterable;
 
     if (i === lastFragmentIndex) {
-      ({component, controller, resolve, isCaseInsensitive} = inputRoute);
+      ({component, controller, resolve, isCaseInsensitive, isLeafReenterable} = inputRoute);
     }
 
-    parent = resolveAbstractRouteFragment(urlFragment, parent, parentMap,
-      component, controller, resolve, isCaseInsensitive, router);
+    parent = resolveAbstractRouteFragment(
+      urlFragment,
+      parent,
+      parentMap,
+      component,
+      controller,
+      resolve,
+      isCaseInsensitive,
+      isLeafReenterable,
+      router);
     parentMap = parent.children;
   });
 
@@ -902,18 +931,38 @@ const resolveInputRoute = (inputRoute, parent, parentMap, router) => {
   }
 };
 
-const resolveAbstractRouteFragment = (urlFragment, parent, parentMap, component,
-  controller, resolve, isCaseInsensitive, router) => {
+const resolveAbstractRouteFragment = (
+  urlFragment,
+  parent,
+  parentMap,
+  component,
+  controller,
+  resolve,
+  isCaseInsensitive,
+  isLeafReenterable,
+  router) => {
   let abstractRouteFragment = parentMap.get(urlFragment);
 
   if (abstractRouteFragment) {
-    abstractRouteFragment.update(component, controller, resolve, isCaseInsensitive);
+    abstractRouteFragment.update(
+      component,
+      controller,
+      resolve,
+      isCaseInsensitive,
+      isLeafReenterable);
 
     return abstractRouteFragment;
   }
 
-  abstractRouteFragment = new AbstractRouteFragment(urlFragment, parent, component,
-    controller, resolve, isCaseInsensitive, router);
+  abstractRouteFragment = new AbstractRouteFragment(
+    urlFragment,
+    parent,
+    component,
+    controller,
+    resolve,
+    isCaseInsensitive,
+    isLeafReenterable,
+    router);
 
   parentMap.set(urlFragment, abstractRouteFragment);
 
@@ -1012,6 +1061,11 @@ const validateUnresolvedAbstractRouteFragment = (abstractRouteFragment, parentIs
     && (!hasChildren || (!abstractRouteFragment.path && !abstractRouteFragment.controller))) {
     throw new Error(`Route ${buildReadablePathBackFrom(abstractRouteFragment)} must have at least`
       + ' either a component or (a path and children) or (a controller and children).');
+  }
+
+  if (abstractRouteFragment.isLeafReenterable && hasChildren) {
+    throw new Error(`Route ${buildReadablePathBackFrom(abstractRouteFragment)} can not be leaf`
+      + ' reenterable because it has children.');
   }
 
   validateAbstractRouteFragmentsTree(abstractRouteFragment.children, isResolvable);
@@ -1354,6 +1408,7 @@ const getNewRouteFragments = (targetRouteFragment, currentRouteFragments,
       const existingRouteFragment = existingRouteFragmentsMap.get(abstractRouteFragment);
 
       if (existingRouteFragment
+        && !existingRouteFragment.isLeafReenterable
         && existingRouteFragment.normalizedPath === routeFragment.normalizedPath) {
         // update the path and url path of the existing route fragment with
         // the current matching path and url path

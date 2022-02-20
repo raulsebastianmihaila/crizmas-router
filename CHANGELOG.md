@@ -1,3 +1,13 @@
+<a name="2.0.4"></a>
+# [2.0.4](https://github.com/raulsebastianmihaila/crizmas-router/compare/v2.0.3...v2.0.4) (2022-02-27)
+
+### Updates
+- Added ability to reenter leaf route fragments when transitioning (without refreshing).
+- Mark fallback routes as leaf-reenterable.
+- Updated crizmas-mvc and prop-types peer dependencies.
+- Updated crizmas-mvc, prop-types and jest dev dependencies.
+- Configure npm to use legacy peer dependency behavior.
+
 <a name="2.0.3"></a>
 # [2.0.3](https://github.com/raulsebastianmihaila/crizmas-router/compare/v2.0.1...v2.0.3) (2021-08-22)
 
